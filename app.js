@@ -3,18 +3,80 @@
    Simple localStorage-backed data layer used by both system pages.
    ========================================================================== */
 
+/* Ma'lumotlar endi Supabase'da (bulutda) saqlanadi — barcha qurilmalarda bir xil
+   ko'rinadi va real vaqtda sinxronlanadi. Internet yo'q bo'lsa oxirgi ko'chirilgan
+   nusxa brauzer keshidan (localStorage) ko'rsatiladi. */
+const SUPABASE_URL = "https://nuykhzrzcaanrygnjede.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWtoenJ6Y2FhbnJ5Z25qZWRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMDcwNDAsImV4cCI6MjA5OTU4MzA0MH0.0Vv3-QJKhCPBHcCM3dlQ-Dkrt3q-2blxOIglyBixxjY";
 const STORE_PREFIX = "kab_";
 
 const Store = {
-  get(key, fallback){
-    try{
-      const raw = localStorage.getItem(STORE_PREFIX + key);
-      return raw ? JSON.parse(raw) : (fallback || []);
-    }catch(e){ return fallback || []; }
+  _cache: {},
+  _client: null,
+  _ready: false,
+
+  client(){
+    if(!this._client && window.supabase){
+      this._client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+    return this._client;
   },
+
+  /* Load everything from Supabase, fall back to last-known localStorage cache
+     if offline, and subscribe to live changes from other devices. */
+  async init(onRemoteChange){
+    // Seed from local cache first so the UI isn't empty while we fetch.
+    try{
+      const raw = localStorage.getItem(STORE_PREFIX + "cache");
+      if(raw) this._cache = JSON.parse(raw) || {};
+    }catch(e){ /* ignore */ }
+
+    const client = this.client();
+    if(client){
+      try{
+        const { data, error } = await client.from("kab_data").select("key,value");
+        if(!error && data){
+          data.forEach(row => { this._cache[row.key] = row.value; });
+          this._persistLocalCache();
+        }
+      }catch(e){ /* offline: keep local cache */ }
+
+      try{
+        client
+          .channel("kab_data_changes")
+          .on("postgres_changes", { event: "*", schema: "public", table: "kab_data" }, payload => {
+            const row = payload.new || payload.old;
+            if(!row) return;
+            if(payload.eventType === "DELETE") delete this._cache[row.key];
+            else this._cache[row.key] = row.value;
+            this._persistLocalCache();
+            if(typeof onRemoteChange === "function") onRemoteChange();
+          })
+          .subscribe();
+      }catch(e){ /* realtime not critical */ }
+    }
+    this._ready = true;
+  },
+
+  _persistLocalCache(){
+    try{ localStorage.setItem(STORE_PREFIX + "cache", JSON.stringify(this._cache)); }catch(e){}
+  },
+
+  get(key, fallback){
+    if(Object.prototype.hasOwnProperty.call(this._cache, key)) return this._cache[key];
+    return fallback !== undefined ? fallback : [];
+  },
+
   set(key, value){
-    localStorage.setItem(STORE_PREFIX + key, JSON.stringify(value));
+    this._cache[key] = value;
+    this._persistLocalCache();
     flashSaved();
+    const client = this.client();
+    if(client){
+      client.from("kab_data")
+        .upsert({ key, value, updated_at: new Date().toISOString() })
+        .then(({error}) => { if(error) console.error("Supabase saqlashda xato:", error); });
+    }
   },
   add(key, item){
     const list = this.get(key, []);

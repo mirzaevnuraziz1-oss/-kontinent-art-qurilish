@@ -106,10 +106,11 @@
       </div>
     </section>
 
-    <div class="footer-note">KONTINENT ART BUSINESS — Davomat va baholash tizimi · ma'lumotlar shu brauzerda saqlanadi</div>
+    <div class="footer-note">KONTINENT ART BUSINESS — Davomat va baholash tizimi · ma'lumotlar bulutda (Supabase) saqlanadi, barcha qurilmalarda sinxron</div>
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
 initNav();
@@ -239,7 +240,7 @@ document.getElementById("formForeman").addEventListener("submit", e=>{
   e.target.reset(); renderAll();
 });
 
-renderAll();
+Store.init(renderAll).then(renderAll);
 </script>
 </body>
 </html>

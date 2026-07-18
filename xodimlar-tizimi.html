@@ -285,10 +285,11 @@
       </div>
     </section>
 
-    <div class="footer-note">KONTINENT ART BUSINESS — Xodimlar boshqaruv tizimi · ma'lumotlar shu brauzerda saqlanadi</div>
+    <div class="footer-note">KONTINENT ART BUSINESS — Xodimlar boshqaruv tizimi · ma'lumotlar bulutda (Supabase) saqlanadi, barcha qurilmalarda sinxron</div>
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
 initNav();
@@ -544,7 +545,7 @@ document.addEventListener("click", e=>{
   renderAll();
 });
 
-renderAll();
+Store.init(renderAll).then(renderAll);
 </script>
 </body>
 </html>
