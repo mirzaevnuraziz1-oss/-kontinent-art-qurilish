@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Xodimlar boshqaruv tizimi — KONTINENT ART BUSINESS</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark"><span>KAB</span></div>
+      <div class="brand-text">
+        <div class="name">Xodimlar boshqaruv tizimi</div>
+        <div class="sub">Kontinent Art Business</div>
+      </div>
+    </div>
+    <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
+    <a class="home-link" href="index.html">Bosh sahifa</a>
+  </div>
+</header>
+
+<div class="app-shell">
+  <nav class="railnav">
+    <div class="legend-label">Bo'limlar</div>
+    <button class="active" data-target="sec-overview"><span class="num">01</span>Umumiy holat</button>
+    <button data-target="sec-employees"><span class="num">02</span>Xodimlar</button>
+    <button data-target="sec-work"><span class="num">03</span>Ish faoliyati</button>
+    <button data-target="sec-payments"><span class="num">04</span>Oyliklar</button>
+    <button data-target="sec-foremen"><span class="num">05</span>Prorablar</button>
+    <button data-target="sec-reports"><span class="num">06</span>Prorab hisobotlari</button>
+    <button data-target="sec-objects"><span class="num">07</span>Obyektlar</button>
+  </nav>
+
+  <main class="content">
+
+    <!-- 01 UMUMIY HOLAT -->
+    <section id="sec-overview" class="section active">
+      <h1 class="page-title">Umumiy holat</h1>
+      <p class="page-sub">Barcha bo'limlar bo'yicha so'nggi faoliyat bir qarashda.</p>
+
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="card">
+          <div class="dim-heading" style="padding:18px 20px 0;"><span class="dim-label">Ish faoliyati yozuvlari</span></div>
+          <p style="padding:0 20px 6px;font-size:12px;color:var(--ink-soft);">So'nggi faoliyat</p>
+          <div id="feedWork" class="feed-card"></div>
+        </div>
+        <div class="card">
+          <div class="dim-heading" style="padding:18px 20px 0;"><span class="dim-label">To'lovlar nazorati</span></div>
+          <p style="padding:0 20px 6px;font-size:12px;color:var(--ink-soft);">Kutilayotgan to'lovlar</p>
+          <div id="feedPayments" class="feed-card"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="dim-heading" style="padding:18px 20px 0;"><span class="dim-label">Prorablardan</span></div>
+          <p style="padding:0 20px 6px;font-size:12px;color:var(--ink-soft);">So'nggi prorab hisobotlari</p>
+          <div id="feedReports" class="feed-card"></div>
+        </div>
+        <div class="card">
+          <div class="dim-heading" style="padding:18px 20px 0;"><span class="dim-label">Obyekt xarajatlari</span></div>
+          <p style="padding:0 20px 6px;font-size:12px;color:var(--ink-soft);">So'nggi material xarajatlari</p>
+          <div id="feedMaterials" class="feed-card"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 XODIMLAR -->
+    <section id="sec-employees" class="section">
+      <h1 class="page-title">Xodimlar</h1>
+      <p class="page-sub">Kompaniya xodimlarini qo'shish va ro'yxatini yuritish.</p>
+
+      <form id="formEmployee" class="card form-card">
+        <h3>Yangi xodim qo'shish</h3>
+        <div class="form-grid">
+          <div class="field"><label>F.I.Sh.</label><input required name="name" placeholder="F.I.Sh."></div>
+          <div class="field"><label>Lavozim</label><input required name="position" placeholder="Lavozim"></div>
+          <div class="field"><label>Obyekt</label><select name="objectId"></select></div>
+          <div class="field"><label>Telefon</label><input name="phone" placeholder="+998 -- --- -- --"></div>
+          <div class="field"><label>Ishga qabul sanasi</label><input required type="date" name="hireDate"></div>
+          <div class="field"><label>Oylik maosh (so'm)</label><input required type="number" min="0" name="salary" placeholder="0"></div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Xodimni qo'shish</button></div>
+      </form>
+
+      <div class="dim-heading"><span class="dim-label">Xodimlar ro'yxati</span><span class="dim-num" id="countEmployees">0</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>F.I.Sh.</th><th>Lavozim</th><th>Obyekt</th><th>Telefon</th>
+            <th>Qabul sanasi</th><th class="num">Oylik maosh</th><th></th>
+          </tr></thead>
+          <tbody id="tblEmployees"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 03 ISH FAOLIYATI -->
+    <section id="sec-work" class="section">
+      <h1 class="page-title">Ish faoliyati</h1>
+      <p class="page-sub">Xodimlarning kunlik bajargan ishlari jurnali.</p>
+
+      <form id="formWork" class="card form-card">
+        <h3>Ish faoliyati yozuvi qo'shish</h3>
+        <div class="form-grid">
+          <div class="field"><label>Xodim</label><select required name="employeeId"></select></div>
+          <div class="field"><label>Sana</label><input required type="date" name="date"></div>
+          <div class="field"><label>Obyekt</label><select name="objectId"></select></div>
+          <div class="field span-3"><label>Bajarilgan ish</label><input required name="workDone" placeholder="Bajarilgan ish tavsifi"></div>
+          <div class="field span-3"><label>Izoh</label><textarea name="note" placeholder="Qo'shimcha izoh (ixtiyoriy)"></textarea></div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Yozuvni qo'shish</button></div>
+      </form>
+
+      <div class="table-toolbar">
+        <div class="dim-heading" style="flex:1;margin-bottom:0;"><span class="dim-label">Ish faoliyati jurnali</span></div>
+        <select id="filterWork"></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sana</th><th>Xodim</th><th>Obyekt</th><th class="wrap">Bajarilgan ish</th><th class="wrap">Izoh</th><th></th></tr></thead>
+          <tbody id="tblWork"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 04 OYLIKLAR -->
+    <section id="sec-payments" class="section">
+      <h1 class="page-title">Oyliklar</h1>
+      <p class="page-sub">To'lov yozuvlarini kiritish va to'lovlar tarixi.</p>
+
+      <form id="formPayment" class="card form-card">
+        <h3>To'lov yozuvi qo'shish</h3>
+        <div class="form-grid">
+          <div class="field"><label>Xodim</label><select required name="employeeId"></select></div>
+          <div class="field"><label>Oy</label><input required type="month" name="month"></div>
+          <div class="field"><label>Summa (so'm)</label><input required type="number" min="0" name="amount" placeholder="0"></div>
+          <div class="field"><label>To'lov sanasi</label><input required type="date" name="payDate"></div>
+          <div class="field span-2">
+            <label>Holat</label>
+            <div class="radio-row">
+              <label><input type="radio" name="status" value="Toʻlandi" checked> To'landi</label>
+              <label><input type="radio" name="status" value="Kutilmoqda"> Kutilmoqda</label>
+              <label><input type="radio" name="status" value="Kechikkan"> Kechikkan</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">To'lovni qo'shish</button></div>
+      </form>
+
+      <div class="table-toolbar">
+        <div class="dim-heading" style="flex:1;margin-bottom:0;"><span class="dim-label">To'lovlar tarixi</span></div>
+        <select id="filterPayments"></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Xodim</th><th>Oy</th><th class="num">Summa</th><th>To'lov sanasi</th><th>Holat</th><th></th></tr></thead>
+          <tbody id="tblPayments"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 05 PRORABLAR -->
+    <section id="sec-foremen" class="section">
+      <h1 class="page-title">Prorablar</h1>
+      <p class="page-sub">Obyektlarga biriktirilgan prorablar ro'yxati.</p>
+
+      <form id="formForeman" class="card form-card">
+        <h3>Yangi prorab qo'shish</h3>
+        <div class="form-grid">
+          <div class="field"><label>F.I.Sh.</label><input required name="name" placeholder="F.I.Sh."></div>
+          <div class="field"><label>Telefon</label><input name="phone" placeholder="+998 -- --- -- --"></div>
+          <div class="field"><label>Biriktirilgan obyekt(lar)</label><input name="objects" placeholder="Masalan: Obyekt-1, Obyekt-2"></div>
+          <div class="field"><label>Ish boshlagan sana</label><input required type="date" name="startDate"></div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Prorabni qo'shish</button></div>
+      </form>
+
+      <div class="dim-heading"><span class="dim-label">Prorablar ro'yxati</span><span class="dim-num" id="countForemen">0</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>F.I.Sh.</th><th>Telefon</th><th class="wrap">Biriktirilgan obyekt(lar)</th><th>Boshlagan sana</th><th></th></tr></thead>
+          <tbody id="tblForemen"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 06 PRORAB HISOBOTLARI -->
+    <section id="sec-reports" class="section">
+      <h1 class="page-title">Prorab hisobotlari</h1>
+      <p class="page-sub">Prorablarning kunlik obyekt hisobotlari.</p>
+
+      <form id="formReport" class="card form-card">
+        <h3>Kunlik prorab hisoboti qo'shish</h3>
+        <div class="form-grid">
+          <div class="field"><label>Prorab</label><select required name="foremanId"></select></div>
+          <div class="field"><label>Sana</label><input required type="date" name="date"></div>
+          <div class="field"><label>Obyekt</label><select name="objectId"></select></div>
+          <div class="field span-3"><label>Bajarilgan ish (qisqacha)</label><input required name="summary" placeholder="Bajarilgan ish qisqacha"></div>
+          <div class="field span-2"><label>Muammo / kechikish sababi</label><input name="problem" placeholder="Bo'lsa, kiriting"></div>
+          <div class="field">
+            <label>Ustuvor yechim kerakmi?</label>
+            <div class="radio-row">
+              <label><input type="radio" name="urgent" value="Yoʻq" checked> Yo'q</label>
+              <label><input type="radio" name="urgent" value="Ha"> Ha</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Hisobotni qo'shish</button></div>
+      </form>
+
+      <div class="table-toolbar">
+        <div class="dim-heading" style="flex:1;margin-bottom:0;"><span class="dim-label">Prorab hisobotlari jurnali</span></div>
+        <select id="filterReports"></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sana</th><th>Prorab</th><th>Obyekt</th><th class="wrap">Bajarilgan ish</th><th class="wrap">Muammo</th><th>Ustuvor</th><th></th></tr></thead>
+          <tbody id="tblReports"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 07 OBYEKTLAR -->
+    <section id="sec-objects" class="section">
+      <h1 class="page-title">Obyektlar</h1>
+      <p class="page-sub">Qurilish obyektlari va ularning material xarajatlari.</p>
+
+      <form id="formObject" class="card form-card">
+        <h3>Obyekt qo'shish</h3>
+        <div class="form-grid">
+          <div class="field"><label>Obyekt nomi</label><input required name="name" placeholder="Obyekt nomi"></div>
+          <div class="field"><label>Manzil</label><input required name="address" placeholder="Manzil"></div>
+          <div class="field"><label>Mas'ul prorab</label><select name="foremanId"></select></div>
+          <div class="field"><label>Boshlanish sanasi</label><input required type="date" name="startDate"></div>
+          <div class="field"><label>Reja tugash sanasi</label><input required type="date" name="planEndDate"></div>
+          <div class="field">
+            <label>Holat</label>
+            <select name="status">
+              <option value="jarayonda">Jarayonda</option>
+              <option value="tugallangan">Tugallangan</option>
+              <option value="toxtatilgan">To'xtatilgan</option>
+              <option value="kechikmoqda">Kechikmoqda</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Obyektni qo'shish</button></div>
+      </form>
+
+      <div class="dim-heading"><span class="dim-label">Obyektlar ro'yxati</span><span class="dim-num" id="countObjects">0</span></div>
+      <div id="objectsGrid" class="grid-3" style="margin-bottom:36px;"></div>
+
+      <form id="formMaterial" class="card form-card">
+        <h3>Material xarajati qo'shish</h3>
+        <div class="form-grid">
+          <div class="field"><label>Obyekt</label><select required name="objectId"></select></div>
+          <div class="field"><label>Sana</label><input required type="date" name="date"></div>
+          <div class="field"><label>Material nomi</label><input required name="materialName" placeholder="Material nomi"></div>
+          <div class="field"><label>Miqdor</label><input required type="number" min="0" step="any" name="qty" placeholder="0"></div>
+          <div class="field">
+            <label>O'lchov birligi</label>
+            <select name="unit">
+              <option>tonna</option><option>kg</option><option>m3</option><option>m2</option>
+              <option>dona</option><option>quti</option><option>litr</option><option>metr</option>
+            </select>
+          </div>
+          <div class="field"><label>Narxi (birlik, so'm)</label><input required type="number" min="0" name="unitPrice" placeholder="0"></div>
+          <div class="field span-2"><label>Yetkazib beruvchi</label><input name="supplier" placeholder="Yetkazib beruvchi nomi"></div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Xarajatni qo'shish</button></div>
+      </form>
+
+      <div class="table-toolbar">
+        <div class="dim-heading" style="flex:1;margin-bottom:0;"><span class="dim-label">Material xarajatlari jurnali</span></div>
+        <select id="filterMaterials"></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sana</th><th>Obyekt</th><th>Material</th><th class="num">Miqdor</th><th class="num">Narxi</th><th class="num">Jami</th><th>Yetkazib beruvchi</th><th></th></tr></thead>
+          <tbody id="tblMaterials"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="footer-note">KONTINENT ART BUSINESS — Xodimlar boshqaruv tizimi · ma'lumotlar shu brauzerda saqlanadi</div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script>
+initNav();
+
+function getEmployees(){ return Store.get("employees", []); }
+function getForemen(){ return Store.get("foremen", []); }
+function getObjects(){ return Store.get("objects", []); }
+function getWork(){ return Store.get("workRecords", []); }
+function getPayments(){ return Store.get("payments", []); }
+function getReports(){ return Store.get("reports", []); }
+function getMaterials(){ return Store.get("materials", []); }
+
+function refreshSelects(){
+  const employees = getEmployees(), foremen = getForemen(), objects = getObjects();
+
+  document.querySelectorAll('select[name="objectId"]').forEach(sel=>{
+    fillSelect(sel, objects, {value:"id", label:"name", placeholder:"Obyekt tanlang"});
+  });
+  document.querySelectorAll('select[name="employeeId"]').forEach(sel=>{
+    fillSelect(sel, employees, {value:"id", label:"name", placeholder:"Xodim tanlang"});
+  });
+  document.querySelectorAll('select[name="foremanId"]').forEach(sel=>{
+    fillSelect(sel, foremen, {value:"id", label:"name", placeholder:"Prorab tanlang"});
+  });
+
+  fillSelect(document.getElementById("filterWork"), employees, {value:"id", label:"name", includeAll:true});
+  fillSelect(document.getElementById("filterPayments"), employees, {value:"id", label:"name", includeAll:true});
+  fillSelect(document.getElementById("filterReports"), foremen, {value:"id", label:"name", includeAll:true});
+  fillSelect(document.getElementById("filterMaterials"), objects, {value:"id", label:"name", includeAll:true});
+}
+
+/* ---------- OVERVIEW ---------- */
+function renderOverview(){
+  const employees = getEmployees(), objects = getObjects(), foremen = getForemen();
+
+  const feedWork = getWork().slice(0,6);
+  document.getElementById("feedWork").innerHTML = feedWork.length ? feedWork.map(w=>`
+    <div class="feed-item">
+      <div class="top-row"><span class="title">${escapeHtml(nameById(employees,w.employeeId))}</span><span class="meta">${fmtDate(w.date)}</span></div>
+      <span>${escapeHtml(w.workDone)}</span>
+      <span class="meta">${escapeHtml(nameById(objects,w.objectId))}</span>
+    </div>`).join("") : `<div class="empty-note">Hozircha yozuvlar yo'q</div>`;
+
+  const pending = getPayments().filter(p=>p.status!=="Toʻlandi").slice(0,6);
+  document.getElementById("feedPayments").innerHTML = pending.length ? pending.map(p=>`
+    <div class="feed-item">
+      <div class="top-row"><span class="title">${escapeHtml(nameById(employees,p.employeeId))}</span><span class="badge ${p.status==='Kechikkan'?'danger':'pending'}">${p.status}</span></div>
+      <span class="meta">${monthLabel(p.month)} · ${fmtSum(p.amount)} so'm</span>
+    </div>`).join("") : `<div class="empty-note">Kutilayotgan to'lovlar yo'q</div>`;
+
+  const reports = getReports().slice(0,6);
+  document.getElementById("feedReports").innerHTML = reports.length ? reports.map(r=>`
+    <div class="feed-item">
+      <div class="top-row"><span class="title">${escapeHtml(nameById(foremen,r.foremanId))}</span><span class="meta">${fmtDate(r.date)}</span></div>
+      <span>${escapeHtml(r.summary)}</span>
+      ${r.urgent==="Ha"?'<span class="badge danger">Ustuvor yechim kerak</span>':''}
+    </div>`).join("") : `<div class="empty-note">Hisobotlar yo'q</div>`;
+
+  const materials = getMaterials().slice(0,6);
+  document.getElementById("feedMaterials").innerHTML = materials.length ? materials.map(m=>`
+    <div class="feed-item">
+      <div class="top-row"><span class="title">${escapeHtml(m.materialName)}</span><span class="meta">${fmtDate(m.date)}</span></div>
+      <span class="meta">${escapeHtml(nameById(objects,m.objectId))} · ${m.qty} ${m.unit} × ${fmtSum(m.unitPrice)} so'm</span>
+    </div>`).join("") : `<div class="empty-note">Xarajatlar yo'q</div>`;
+}
+
+/* ---------- EMPLOYEES ---------- */
+function renderEmployees(){
+  const employees = getEmployees(), objects = getObjects();
+  document.getElementById("countEmployees").textContent = employees.length;
+  document.getElementById("tblEmployees").innerHTML = employees.length ? employees.map(e=>`
+    <tr>
+      <td>${escapeHtml(e.name)}</td>
+      <td>${escapeHtml(e.position)}</td>
+      <td>${escapeHtml(nameById(objects,e.objectId))}</td>
+      <td class="mono">${escapeHtml(e.phone||"—")}</td>
+      <td>${fmtDate(e.hireDate)}</td>
+      <td class="num">${fmtSum(e.salary)}</td>
+      <td><button class="del-btn" data-store="employees" data-id="${e.id}">×</button></td>
+    </tr>`).join("") : `<tr><td colspan="7"><div class="empty-note">Hali xodim qo'shilmagan</div></td></tr>`;
+}
+
+/* ---------- WORK RECORDS ---------- */
+function renderWork(){
+  const employees = getEmployees(), objects = getObjects();
+  const filterVal = document.getElementById("filterWork").value;
+  const list = getWork().filter(w=>!filterVal || w.employeeId===filterVal);
+  document.getElementById("tblWork").innerHTML = list.length ? list.map(w=>`
+    <tr>
+      <td>${fmtDate(w.date)}</td>
+      <td>${escapeHtml(nameById(employees,w.employeeId))}</td>
+      <td>${escapeHtml(nameById(objects,w.objectId))}</td>
+      <td class="wrap">${escapeHtml(w.workDone)}</td>
+      <td class="wrap">${escapeHtml(w.note||"—")}</td>
+      <td><button class="del-btn" data-store="workRecords" data-id="${w.id}">×</button></td>
+    </tr>`).join("") : `<tr><td colspan="6"><div class="empty-note">Yozuvlar yo'q</div></td></tr>`;
+}
+
+/* ---------- PAYMENTS ---------- */
+function renderPayments(){
+  const employees = getEmployees();
+  const filterVal = document.getElementById("filterPayments").value;
+  const list = getPayments().filter(p=>!filterVal || p.employeeId===filterVal);
+  document.getElementById("tblPayments").innerHTML = list.length ? list.map(p=>{
+    const cls = p.status==="Toʻlandi" ? "ok" : p.status==="Kechikkan" ? "danger" : "pending";
+    return `<tr>
+      <td>${escapeHtml(nameById(employees,p.employeeId))}</td>
+      <td>${monthLabel(p.month)}</td>
+      <td class="num">${fmtSum(p.amount)}</td>
+      <td>${fmtDate(p.payDate)}</td>
+      <td><span class="badge ${cls}">${p.status}</span></td>
+      <td><button class="del-btn" data-store="payments" data-id="${p.id}">×</button></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="6"><div class="empty-note">To'lovlar yo'q</div></td></tr>`;
+}
+
+/* ---------- FOREMEN ---------- */
+function renderForemen(){
+  const foremen = getForemen();
+  document.getElementById("countForemen").textContent = foremen.length;
+  document.getElementById("tblForemen").innerHTML = foremen.length ? foremen.map(f=>`
+    <tr>
+      <td>${escapeHtml(f.name)}</td>
+      <td class="mono">${escapeHtml(f.phone||"—")}</td>
+      <td class="wrap">${escapeHtml(f.objects||"—")}</td>
+      <td>${fmtDate(f.startDate)}</td>
+      <td><button class="del-btn" data-store="foremen" data-id="${f.id}">×</button></td>
+    </tr>`).join("") : `<tr><td colspan="5"><div class="empty-note">Prorab qo'shilmagan</div></td></tr>`;
+}
+
+/* ---------- REPORTS ---------- */
+function renderReports(){
+  const foremen = getForemen(), objects = getObjects();
+  const filterVal = document.getElementById("filterReports").value;
+  const list = getReports().filter(r=>!filterVal || r.foremanId===filterVal);
+  document.getElementById("tblReports").innerHTML = list.length ? list.map(r=>`
+    <tr>
+      <td>${fmtDate(r.date)}</td>
+      <td>${escapeHtml(nameById(foremen,r.foremanId))}</td>
+      <td>${escapeHtml(nameById(objects,r.objectId))}</td>
+      <td class="wrap">${escapeHtml(r.summary)}</td>
+      <td class="wrap">${escapeHtml(r.problem||"—")}</td>
+      <td>${r.urgent==="Ha" ? '<span class="badge danger">Ha</span>' : '<span class="badge neutral">Yo\'q</span>'}</td>
+      <td><button class="del-btn" data-store="reports" data-id="${r.id}">×</button></td>
+    </tr>`).join("") : `<tr><td colspan="7"><div class="empty-note">Hisobotlar yo'q</div></td></tr>`;
+}
+
+/* ---------- OBJECTS + MATERIALS ---------- */
+const statusLabels = {jarayonda:"Jarayonda", tugallangan:"Tugallangan", toxtatilgan:"To'xtatilgan", kechikmoqda:"Kechikmoqda"};
+const statusBadge = {jarayonda:"info", tugallangan:"ok", toxtatilgan:"neutral", kechikmoqda:"danger"};
+
+function renderObjects(){
+  const objects = getObjects(), foremen = getForemen(), materials = getMaterials();
+  document.getElementById("countObjects").textContent = objects.length;
+  document.getElementById("objectsGrid").innerHTML = objects.length ? objects.map(o=>{
+    const spent = materials.filter(m=>m.objectId===o.id).reduce((s,m)=>s+(m.qty*m.unitPrice),0);
+    return `<div class="obj-card" data-status="${o.status}">
+      <div class="obj-name">${escapeHtml(o.name)}</div>
+      <div class="obj-addr">${escapeHtml(o.address)}</div>
+      <div class="obj-meta"><span>${escapeHtml(nameById(foremen,o.foremanId))}</span><span class="badge ${statusBadge[o.status]}">${statusLabels[o.status]}</span></div>
+      <div class="obj-meta"><span>${fmtDate(o.startDate)} → ${fmtDate(o.planEndDate)}</span><span>${fmtSum(spent)} so'm</span></div>
+    </div>`;
+  }).join("") : `<div class="empty-note">Obyekt qo'shilmagan</div>`;
+}
+
+function renderMaterials(){
+  const objects = getObjects();
+  const filterVal = document.getElementById("filterMaterials").value;
+  const list = getMaterials().filter(m=>!filterVal || m.objectId===filterVal);
+  document.getElementById("tblMaterials").innerHTML = list.length ? list.map(m=>`
+    <tr>
+      <td>${fmtDate(m.date)}</td>
+      <td>${escapeHtml(nameById(objects,m.objectId))}</td>
+      <td>${escapeHtml(m.materialName)}</td>
+      <td class="num">${m.qty} ${escapeHtml(m.unit)}</td>
+      <td class="num">${fmtSum(m.unitPrice)}</td>
+      <td class="num">${fmtSum(m.qty*m.unitPrice)}</td>
+      <td>${escapeHtml(m.supplier||"—")}</td>
+      <td><button class="del-btn" data-store="materials" data-id="${m.id}">×</button></td>
+    </tr>`).join("") : `<tr><td colspan="8"><div class="empty-note">Xarajatlar yo'q</div></td></tr>`;
+}
+
+function renderAll(){
+  refreshSelects();
+  renderOverview();
+  renderEmployees();
+  renderWork();
+  renderPayments();
+  renderForemen();
+  renderReports();
+  renderObjects();
+  renderMaterials();
+}
+
+/* ---------- form handlers ---------- */
+document.getElementById("formEmployee").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  Store.add("employees", {id:uid(), name:f.get("name"), position:f.get("position"), objectId:f.get("objectId"), phone:f.get("phone"), hireDate:f.get("hireDate"), salary:Number(f.get("salary"))});
+  e.target.reset(); renderAll();
+});
+
+document.getElementById("formWork").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  Store.add("workRecords", {id:uid(), employeeId:f.get("employeeId"), date:f.get("date"), objectId:f.get("objectId"), workDone:f.get("workDone"), note:f.get("note")});
+  e.target.reset(); renderAll();
+});
+
+document.getElementById("formPayment").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  Store.add("payments", {id:uid(), employeeId:f.get("employeeId"), month:f.get("month"), amount:Number(f.get("amount")), payDate:f.get("payDate"), status:f.get("status")});
+  e.target.reset(); renderAll();
+});
+
+document.getElementById("formForeman").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  Store.add("foremen", {id:uid(), name:f.get("name"), phone:f.get("phone"), objects:f.get("objects"), startDate:f.get("startDate")});
+  e.target.reset(); renderAll();
+});
+
+document.getElementById("formReport").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  Store.add("reports", {id:uid(), foremanId:f.get("foremanId"), date:f.get("date"), objectId:f.get("objectId"), summary:f.get("summary"), problem:f.get("problem"), urgent:f.get("urgent")});
+  e.target.reset(); renderAll();
+});
+
+document.getElementById("formObject").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  Store.add("objects", {id:uid(), name:f.get("name"), address:f.get("address"), foremanId:f.get("foremanId"), startDate:f.get("startDate"), planEndDate:f.get("planEndDate"), status:f.get("status")});
+  e.target.reset(); renderAll();
+});
+
+document.getElementById("formMaterial").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  Store.add("materials", {id:uid(), objectId:f.get("objectId"), date:f.get("date"), materialName:f.get("materialName"), qty:Number(f.get("qty")), unit:f.get("unit"), unitPrice:Number(f.get("unitPrice")), supplier:f.get("supplier")});
+  e.target.reset(); renderAll();
+});
+
+["filterWork","filterPayments","filterReports","filterMaterials"].forEach(id=>{
+  document.getElementById(id).addEventListener("change", renderAll);
+});
+
+document.addEventListener("click", e=>{
+  const btn = e.target.closest(".del-btn");
+  if(!btn) return;
+  Store.remove(btn.dataset.store, btn.dataset.id);
+  renderAll();
+});
+
+renderAll();
+</script>
+</body>
+</html>

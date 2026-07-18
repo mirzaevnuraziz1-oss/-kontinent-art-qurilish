@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Xodimlar nazorati va baholash tizimi — KONTINENT ART BUSINESS</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark"><span>KAB</span></div>
+      <div class="brand-text">
+        <div class="name">Xodimlar nazorati</div>
+        <div class="sub">Davomat &amp; baholash — Kontinent Art Business</div>
+      </div>
+    </div>
+    <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
+    <a class="home-link" href="index.html">Bosh sahifa</a>
+  </div>
+</header>
+
+<div class="app-shell">
+  <nav class="railnav">
+    <div class="legend-label">Bo'limlar</div>
+    <button class="active" data-target="sec-employees"><span class="num">01</span>Xodimlar</button>
+    <button data-target="sec-foremen"><span class="num">02</span>Prorablar</button>
+  </nav>
+
+  <main class="content">
+
+    <div class="card att-controls card-pad" style="margin-bottom:24px;">
+      <div class="field">
+        <label>Oy</label>
+        <input type="month" id="monthPicker">
+      </div>
+      <div class="field">
+        <label>Oyning ish kunlari normasi</label>
+        <input type="number" id="normInput" min="1" max="31" value="26">
+      </div>
+      <div style="align-self:center;">
+        <span class="badge info" id="normBadge">26 ish kuni</span>
+      </div>
+    </div>
+
+    <!-- 01 XODIMLAR -->
+    <section id="sec-employees" class="section active">
+      <h1 class="page-title">Xodimlar</h1>
+      <p class="page-sub">Xodim qo'shish, kunlik davomatni belgilash va oylik hisob-kitobini ko'rish.</p>
+
+      <form id="formEmployee" class="card form-card">
+        <h3>Yangi xodim qo'shish</h3>
+        <div class="form-grid">
+          <div class="field"><label>F.I.Sh.</label><input required name="name" placeholder="F.I.Sh."></div>
+          <div class="field"><label>Lavozim</label><input required name="position" placeholder="Lavozim"></div>
+          <div class="field"><label>Obyekt</label><select name="objectId"></select></div>
+          <div class="field"><label>Telefon</label><input name="phone" placeholder="+998 -- --- -- --"></div>
+          <div class="field"><label>Ishga qabul sanasi</label><input required type="date" name="hireDate"></div>
+          <div class="field"><label>Oylik maosh (so'm)</label><input required type="number" min="0" name="salary" placeholder="0"></div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Xodimni qo'shish</button></div>
+      </form>
+
+      <div class="dim-heading"><span class="dim-label">Xodimlar — shu oy uchun davomat va maosh</span></div>
+      <div class="att-scroll" style="margin-bottom:10px;">
+        <table class="att-table" id="attTableEmployees"></table>
+      </div>
+      <div class="legend-row">
+        <span class="item"><span class="swatch present"></span>Keldi</span>
+        <span class="item"><span class="swatch late"></span>Kechikdi</span>
+        <span class="item"><span class="swatch absent"></span>Kelmadi</span>
+        <span class="item"><span class="swatch off"></span>Belgilanmagan</span>
+        <span style="color:var(--steel);font-family:var(--font-mono);">— katakchani bosib holatni almashtiring</span>
+      </div>
+    </section>
+
+    <!-- 02 PRORABLAR -->
+    <section id="sec-foremen" class="section">
+      <h1 class="page-title">Prorablar</h1>
+      <p class="page-sub">Prorab qo'shish, kunlik davomatni belgilash va oylik hisob-kitobini ko'rish.</p>
+
+      <form id="formForeman" class="card form-card">
+        <h3>Yangi prorab qo'shish</h3>
+        <div class="form-grid">
+          <div class="field"><label>F.I.Sh.</label><input required name="name" placeholder="F.I.Sh."></div>
+          <div class="field"><label>Telefon</label><input name="phone" placeholder="+998 -- --- -- --"></div>
+          <div class="field"><label>Biriktirilgan obyekt(lar)</label><input name="objects" placeholder="Masalan: Obyekt-1, Obyekt-2"></div>
+          <div class="field"><label>Ish boshlagan sana</label><input required type="date" name="startDate"></div>
+          <div class="field"><label>Oylik maosh (so'm)</label><input required type="number" min="0" name="salary" placeholder="0"></div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Prorabni qo'shish</button></div>
+      </form>
+
+      <div class="dim-heading"><span class="dim-label">Prorablar — shu oy uchun davomat va maosh</span></div>
+      <div class="att-scroll" style="margin-bottom:10px;">
+        <table class="att-table" id="attTableForemen"></table>
+      </div>
+      <div class="legend-row">
+        <span class="item"><span class="swatch present"></span>Keldi</span>
+        <span class="item"><span class="swatch late"></span>Kechikdi</span>
+        <span class="item"><span class="swatch absent"></span>Kelmadi</span>
+        <span class="item"><span class="swatch off"></span>Belgilanmagan</span>
+        <span style="color:var(--steel);font-family:var(--font-mono);">— katakchani bosib holatni almashtiring</span>
+      </div>
+    </section>
+
+    <div class="footer-note">KONTINENT ART BUSINESS — Davomat va baholash tizimi · ma'lumotlar shu brauzerda saqlanadi</div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script>
+initNav();
+
+const monthPicker = document.getElementById("monthPicker");
+const normInput = document.getElementById("normInput");
+const normBadge = document.getElementById("normBadge");
+monthPicker.value = currentMonthKey();
+
+function getEmployees(){ return Store.get("employees", []); }
+function getForemen(){ return Store.get("foremen", []); }
+function getObjects(){ return Store.get("objects", []); }
+function getAttendance(){ return Store.get("attendance", {}); }
+function setAttendance(data){ Store.set("attendance", data); }
+function getNorms(){ return Store.get("monthNorms", {}); }
+function setNorms(data){ Store.set("monthNorms", data); }
+
+function currentNorm(){
+  const norms = getNorms();
+  const key = monthPicker.value;
+  return norms[key] || 26;
+}
+
+function daysInMonth(ym){
+  const [y,m] = ym.split("-").map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+function refreshSelects(){
+  fillSelect(document.querySelector('#formEmployee select[name="objectId"]'), getObjects(), {value:"id", label:"name", placeholder:"Obyekt tanlang"});
+}
+
+/* cycle: '' -> present -> late -> absent -> '' */
+const STATES = ["", "present", "late", "absent"];
+const STATE_MARK = {present:"K", late:"Ke", absent:"Y", "": ""};
+
+const DAY_NAMES = ["Ya","Du","Se","Ch","Pa","Ju","Sh"];
+
+function buildAttTable(tableEl, people, storeKey){
+  const ym = monthPicker.value;
+  const nDays = daysInMonth(ym);
+  const norm = currentNorm();
+  const attendance = getAttendance();
+  const [y,m] = ym.split("-").map(Number);
+
+  let thead = `<thead><tr><th class="att-name-col">F.I.Sh.</th>`;
+  for(let d=1; d<=nDays; d++){
+    const wd = new Date(y, m-1, d).getDay();
+    thead += `<th class="${(wd===0||wd===6)?'weekend':''}">${d}<br><span style="opacity:.6;font-weight:400;">${DAY_NAMES[wd]}</span></th>`;
+  }
+  thead += `<th>Ishlagan</th><th>Jarima</th><th>Yakuniy maosh</th></tr></thead>`;
+
+  let tbody = "<tbody>";
+  if(!people.length){
+    tbody += `<tr><td class="att-name-col">—</td><td colspan="${nDays+3}"><span style="color:var(--steel);font-style:italic;padding:8px;display:inline-block;">Hali kiritilmagan</span></td></tr>`;
+  }
+  people.forEach(p=>{
+    const key = `${storeKey}:${p.id}:${ym}`;
+    const rec = attendance[key] || {};
+    const dayRate = norm ? (Number(p.salary)||0) / norm : 0;
+    let workedDays = 0, fine = 0;
+    let rowCells = "";
+    for(let d=1; d<=nDays; d++){
+      const state = rec[d] || "";
+      if(state==="present") workedDays += 1;
+      if(state==="late"){ workedDays += 1; fine += dayRate*0.5; }
+      if(state==="absent"){ fine += dayRate; }
+      const wd = new Date(y, m-1, d).getDay();
+      rowCells += `<td class="day-cell ${(wd===0||wd===6)?'weekend':''}" data-key="${key}" data-day="${d}" data-state="${state}"><div>${STATE_MARK[state]}</div></td>`;
+    }
+    const finalPay = Math.max((Number(p.salary)||0) - fine, 0);
+    tbody += `<tr>
+      <td class="att-name-col">${escapeHtml(p.name)}</td>
+      ${rowCells}
+      <td class="sum-col">${workedDays}/${norm}</td>
+      <td class="sum-col" style="color:${fine>0?'var(--danger)':'inherit'};">${fmtSum(Math.round(fine))}</td>
+      <td class="sum-col">${fmtSum(Math.round(finalPay))}</td>
+    </tr>`;
+  });
+  tbody += "</tbody>";
+
+  tableEl.innerHTML = thead + tbody;
+}
+
+function renderAll(){
+  refreshSelects();
+  normInput.value = currentNorm();
+  normBadge.textContent = `${currentNorm()} ish kuni`;
+  buildAttTable(document.getElementById("attTableEmployees"), getEmployees(), "emp");
+  buildAttTable(document.getElementById("attTableForemen"), getForemen(), "fore");
+}
+
+monthPicker.addEventListener("change", renderAll);
+normInput.addEventListener("change", ()=>{
+  const norms = getNorms();
+  norms[monthPicker.value] = Number(normInput.value)||26;
+  setNorms(norms);
+  renderAll();
+});
+
+document.addEventListener("click", e=>{
+  const cell = e.target.closest(".day-cell");
+  if(!cell) return;
+  const key = cell.dataset.key;
+  const day = cell.dataset.day;
+  const attendance = getAttendance();
+  const rec = attendance[key] || {};
+  const cur = rec[day] || "";
+  const next = STATES[(STATES.indexOf(cur)+1) % STATES.length];
+  if(next === "") delete rec[day]; else rec[day] = next;
+  attendance[key] = rec;
+  setAttendance(attendance);
+  renderAll();
+});
+
+document.getElementById("formEmployee").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  Store.add("employees", {id:uid(), name:f.get("name"), position:f.get("position"), objectId:f.get("objectId"), phone:f.get("phone"), hireDate:f.get("hireDate"), salary:Number(f.get("salary"))});
+  e.target.reset(); renderAll();
+});
+
+document.getElementById("formForeman").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  Store.add("foremen", {id:uid(), name:f.get("name"), phone:f.get("phone"), objects:f.get("objects"), startDate:f.get("startDate"), salary:Number(f.get("salary"))});
+  e.target.reset(); renderAll();
+});
+
+renderAll();
+</script>
+</body>
+</html>

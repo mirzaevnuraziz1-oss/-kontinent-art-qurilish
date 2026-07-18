@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KONTINENT ART BUSINESS — Tizimlar</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  body{ background:var(--asphalt); }
+  .hero{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    color:var(--concrete);
+    position:relative;
+    overflow:hidden;
+  }
+  .hero-grid{
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size:34px 34px;
+    mask-image:radial-gradient(circle at 30% 20%, black 0%, transparent 75%);
+  }
+  .hero-topbar{
+    position:relative; z-index:2;
+    max-width:1180px; width:100%; margin:0 auto;
+    padding:26px 24px 0;
+    display:flex; align-items:center; gap:14px;
+  }
+  .hero-main{
+    position:relative; z-index:2;
+    flex:1;
+    max-width:1180px; width:100%; margin:0 auto;
+    padding:64px 24px 60px;
+    display:flex; flex-direction:column;
+    justify-content:center;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:10px;
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--caution);
+    margin-bottom:22px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:2px; background:var(--safety); }
+  h1.hero-title{
+    font-size:clamp(34px,5.5vw,60px);
+    line-height:1.04;
+    text-transform:uppercase;
+    letter-spacing:.005em;
+    max-width:820px;
+    margin-bottom:20px;
+  }
+  h1.hero-title em{
+    font-style:normal;
+    color:var(--safety);
+  }
+  .hero-desc{
+    max-width:600px;
+    color:var(--steel-2);
+    font-size:15.5px;
+    line-height:1.65;
+    margin-bottom:46px;
+  }
+  .strip{
+    display:flex; gap:0; flex-wrap:wrap;
+    border-top:1px solid rgba(255,255,255,.12);
+    margin-bottom:46px;
+  }
+  .strip .item{
+    flex:1; min-width:150px;
+    padding:16px 22px 0;
+    border-right:1px solid rgba(255,255,255,.12);
+  }
+  .strip .item:last-child{ border-right:none; }
+  .strip .item .n{
+    font-family:var(--font-display); font-size:22px; color:#fff;
+  }
+  .strip .item .l{
+    font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--steel-2); margin-top:4px;
+  }
+  .cards{
+    display:grid; grid-template-columns:1fr 1fr; gap:20px;
+  }
+  @media(max-width:760px){ .cards{ grid-template-columns:1fr; } }
+  .sys-card{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:3px;
+    padding:28px 26px 26px;
+    position:relative;
+    overflow:hidden;
+    transition:.18s;
+    border:1px solid rgba(0,0,0,.06);
+    box-shadow:0 18px 40px -20px rgba(0,0,0,.55);
+  }
+  .sys-card:hover{ transform:translateY(-3px); box-shadow:0 26px 50px -18px rgba(0,0,0,.6); }
+  .sys-card .tag-corner{ top:0; right:22px; }
+  .sys-card .idx{
+    font-family:var(--font-mono); font-size:11px; color:var(--steel);
+    letter-spacing:.08em; margin-bottom:14px; display:block;
+  }
+  .sys-card h2{
+    font-size:22px; text-transform:uppercase; margin-bottom:10px; letter-spacing:.01em;
+  }
+  .sys-card p{
+    color:var(--ink-soft); font-size:14px; line-height:1.6; margin-bottom:22px;
+  }
+  .sys-card .go{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--font-mono); font-size:12.5px; font-weight:600;
+    letter-spacing:.03em; color:var(--safety);
+  }
+  .sys-card .go svg{ width:14px; height:14px; transition:.15s; }
+  .sys-card:hover .go svg{ transform:translateX(4px); }
+  .hero-footer{
+    position:relative; z-index:2;
+    border-top:1px solid rgba(255,255,255,.1);
+    padding:18px 24px;
+    max-width:1180px; width:100%; margin:0 auto;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+    font-family:var(--font-mono); font-size:11px; color:var(--steel-2);
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-grid"></div>
+
+  <div class="hero-topbar">
+    <div class="brand">
+      <div class="brand-mark"><span>KAB</span></div>
+      <div class="brand-text">
+        <div class="name" style="color:#fff;">Kontinent Art Business</div>
+        <div class="sub">Ichki boshqaruv tizimlari</div>
+      </div>
+    </div>
+    <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
+  </div>
+
+  <div class="hero-main">
+    <span class="eyebrow">Qurilish kompaniyasi · Davlat tenderlari</span>
+    <h1 class="hero-title">Obyektdan <em>hisobotgacha</em> — bitta boshqaruv paneli</h1>
+    <p class="hero-desc">
+      Kontinent Art Business davlat tenderlarida g'olib chiqib qurilish ishlarini olib boradigan
+      kompaniya. Xodimlar, prorablar, obyektlar va davomatni boshqarish uchun ikkita ichki tizim —
+      quyidan kerakli tizimni tanlang.
+    </p>
+
+    <div class="strip">
+      <div class="item"><div class="n">02</div><div class="l">Faol tizim</div></div>
+      <div class="item"><div class="n">7</div><div class="l">Boshqaruv bo'limi</div></div>
+      <div class="item"><div class="n">100%</div><div class="l">Brauzerda saqlanadi</div></div>
+    </div>
+
+    <div class="cards">
+      <a class="sys-card" href="xodimlar-tizimi.html">
+        <div class="tag-corner"></div>
+        <span class="idx">Tizim 01</span>
+        <h2>Xodimlar boshqaruv tizimi</h2>
+        <p>Xodimlar, ish jurnali, to'lovlar, prorablar, obyektlar.</p>
+        <span class="go">Tizimga kirish
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+      <a class="sys-card" href="davomat-baholash.html">
+        <div class="tag-corner"></div>
+        <span class="idx">Tizim 02</span>
+        <h2>Davomat va baholash</h2>
+        <p>Kunlik davomat, jarima, oylik hisob-kitob.</p>
+        <span class="go">Tizimga kirish
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+    </div>
+  </div>
+
+  <div class="hero-footer">
+    <span>KONTINENT ART BUSINESS</span>
+    <span>Ma'lumotlar shu qurilmada, brauzer xotirasida saqlanadi</span>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
