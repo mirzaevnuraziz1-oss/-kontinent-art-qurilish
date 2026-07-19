@@ -106,7 +106,10 @@
         <div class="form-actions"><button type="submit" class="btn">Xodimni qo'shish</button></div>
       </form>
 
-      <div class="search-row"><input type="text" id="searchEmployees" placeholder="F.I.Sh., lavozim yoki telefon bo'yicha qidirish..."></div>
+      <div class="search-row" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="searchEmployees" placeholder="F.I.Sh., lavozim yoki telefon bo'yicha qidirish...">
+        <button type="button" class="btn btn-ghost" id="btnExportEmployees">Excel'ga yuklab olish</button>
+      </div>
       <div class="dim-heading"><span class="dim-label">Xodimlar ro'yxati</span><span class="dim-num" id="countEmployees">0</span></div>
       <div class="table-wrap">
         <table>
@@ -175,6 +178,7 @@
       <div class="table-toolbar">
         <div class="dim-heading" style="flex:1;margin-bottom:0;"><span class="dim-label">To'lovlar tarixi</span></div>
         <select id="filterPayments"></select>
+        <button type="button" class="btn btn-ghost" id="btnExportPayments">Excel'ga yuklab olish</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -258,6 +262,7 @@
           <div class="field"><label>Mas'ul prorab</label><select name="foremanId"></select></div>
           <div class="field"><label>Boshlanish sanasi</label><input required type="date" name="startDate"></div>
           <div class="field"><label>Reja tugash sanasi</label><input required type="date" name="planEndDate"></div>
+          <div class="field"><label>Reja byudjeti (so'm)</label><input type="number" min="0" name="planBudget" placeholder="Ixtiyoriy"></div>
           <div class="field">
             <label>Holat</label>
             <select name="status">
@@ -298,6 +303,7 @@
       <div class="table-toolbar">
         <div class="dim-heading" style="flex:1;margin-bottom:0;"><span class="dim-label">Material xarajatlari jurnali</span></div>
         <select id="filterMaterials"></select>
+        <button type="button" class="btn btn-ghost" id="btnExportMaterials">Excel'ga yuklab olish</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -312,9 +318,17 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="app.js"></script>
 <script>
 initNav();
+
+function exportToExcel(rows, filename, sheetName){
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName || "Sheet1");
+  XLSX.writeFile(wb, filename);
+}
 
 function getEmployees(){ return Store.get("employees", []); }
 function getForemen(){ return Store.get("foremen", []); }
@@ -515,11 +529,17 @@ function renderObjects(){
   document.getElementById("countObjects").textContent = allObjects.length;
   document.getElementById("objectsGrid").innerHTML = objects.length ? objects.map(o=>{
     const spent = materials.filter(m=>m.objectId===o.id).reduce((s,m)=>s+(m.qty*m.unitPrice),0);
+    const plan = Number(o.planBudget)||0;
+    const overBudget = plan > 0 && spent > plan;
+    const budgetLine = plan > 0
+      ? `<div class="obj-meta"><span>Reja: ${fmtSum(plan)} so'm</span><span style="color:${overBudget?'var(--danger)':'inherit'};">Fakt: ${fmtSum(spent)} so'm${overBudget?' ⚠':''}</span></div>`
+      : `<div class="obj-meta"><span>${fmtDate(o.startDate)} → ${fmtDate(o.planEndDate)}</span><span>${fmtSum(spent)} so'm</span></div>`;
     return `<div class="obj-card" data-status="${o.status}">
       <div class="obj-name">${escapeHtml(o.name)}</div>
       <div class="obj-addr">${escapeHtml(o.address)}</div>
       <div class="obj-meta"><span>${escapeHtml(nameById(foremen,o.foremanId))}</span><span class="badge ${statusBadge[o.status]}">${statusLabels[o.status]}</span></div>
-      <div class="obj-meta"><span>${fmtDate(o.startDate)} → ${fmtDate(o.planEndDate)}</span><span>${fmtSum(spent)} so'm</span></div>
+      ${plan > 0 ? `<div class="obj-meta"><span>${fmtDate(o.startDate)} → ${fmtDate(o.planEndDate)}</span></div>` : ''}
+      ${budgetLine}
     </div>`;
   }).join("") : `<div class="empty-note">${q ? "Qidiruvga mos obyekt topilmadi" : "Obyekt qo'shilmagan"}</div>`;
 }
@@ -592,7 +612,7 @@ document.getElementById("formReport").addEventListener("submit", e=>{
 document.getElementById("formObject").addEventListener("submit", e=>{
   e.preventDefault();
   const f = new FormData(e.target);
-  Store.add("objects", {id:uid(), name:f.get("name"), address:f.get("address"), foremanId:f.get("foremanId"), startDate:f.get("startDate"), planEndDate:f.get("planEndDate"), status:f.get("status")});
+  Store.add("objects", {id:uid(), name:f.get("name"), address:f.get("address"), foremanId:f.get("foremanId"), startDate:f.get("startDate"), planEndDate:f.get("planEndDate"), planBudget:Number(f.get("planBudget"))||0, status:f.get("status")});
   e.target.reset(); renderAll();
 });
 
@@ -609,6 +629,34 @@ document.getElementById("formMaterial").addEventListener("submit", e=>{
 
 document.getElementById("searchEmployees").addEventListener("input", renderEmployees);
 document.getElementById("searchObjects").addEventListener("input", renderObjects);
+
+document.getElementById("btnExportEmployees").addEventListener("click", ()=>{
+  const objects = getObjects();
+  const rows = getEmployees().map(e=>({
+    "F.I.Sh.": e.name, "Lavozim": e.position, "Obyekt": nameById(objects,e.objectId),
+    "Telefon": e.phone||"", "Qabul sanasi": e.hireDate||"", "Oylik maosh": e.salary||0
+  }));
+  exportToExcel(rows, "xodimlar.xlsx", "Xodimlar");
+});
+
+document.getElementById("btnExportPayments").addEventListener("click", ()=>{
+  const employees = getEmployees();
+  const rows = getPayments().map(p=>({
+    "Xodim": nameById(employees,p.employeeId), "Oy": p.month, "Summa": p.amount,
+    "To'lov sanasi": p.payDate, "Holat": p.status
+  }));
+  exportToExcel(rows, "toliqlar.xlsx", "Oyliklar");
+});
+
+document.getElementById("btnExportMaterials").addEventListener("click", ()=>{
+  const objects = getObjects();
+  const rows = getMaterials().map(m=>({
+    "Sana": m.date, "Obyekt": nameById(objects,m.objectId), "Material": m.materialName,
+    "Miqdor": m.qty, "Birlik": m.unit, "Narxi": m.unitPrice, "Jami": m.qty*m.unitPrice,
+    "Yetkazib beruvchi": m.supplier||""
+  }));
+  exportToExcel(rows, "material-xarajatlari.xlsx", "Materiallar");
+});
 
 document.addEventListener("click", e=>{
   const btn = e.target.closest(".del-btn");
