@@ -275,6 +275,30 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:.01em;}
 }
 .card-pad{ padding:20px 22px; }
 
+.stat-card{ }
+.stat-label{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--steel); margin-bottom:10px;
+}
+.stat-num{
+  font-family:var(--font-display); font-size:26px; color:var(--ink);
+  font-weight:600; letter-spacing:.01em;
+}
+.stat-num.danger{ color:var(--danger); }
+
+.search-row{ margin-bottom:14px; }
+.search-row input{
+  width:100%; max-width:320px;
+  padding:9px 12px;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  font-family:var(--font-body,inherit);
+  font-size:13.5px;
+  background:var(--paper);
+  color:var(--ink);
+}
+.search-row input:focus{ outline:none; border-color:var(--safety); }
+
 /* signature "site tag" corner stub on stat / summary cards */
 .tag-corner{
   position:absolute;

@@ -157,6 +157,12 @@
       <div class="item"><div class="n">100%</div><div class="l">Bulutda saqlanadi</div></div>
     </div>
 
+    <div class="strip" style="margin-bottom:26px;">
+      <div class="item"><div class="n" id="liveHeadcount">—</div><div class="l">Jamoa (xodim + prorab)</div></div>
+      <div class="item"><div class="n" id="liveActiveObjects">—</div><div class="l">Faol obyektlar</div></div>
+      <div class="item"><div class="n" id="livePending" style="font-size:16px;">—</div><div class="l">Kutilayotgan to'lovlar</div></div>
+    </div>
+
     <div class="cards">
       <a class="sys-card" href="xodimlar-tizimi.html">
         <div class="tag-corner"></div>
@@ -185,6 +191,28 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script>
+function renderLiveStats(){
+  const employees = Store.get("employees", []);
+  const foremen = Store.get("foremen", []);
+  const objects = Store.get("objects", []);
+  const payments = Store.get("payments", []);
+
+  const headcount = employees.length + foremen.length;
+  const activeObjects = objects.filter(o=>o.status==="jarayonda").length;
+  const pendingSum = payments.filter(p=>p.status!=="Toʻlandi").reduce((s,p)=>s+(Number(p.amount)||0),0);
+
+  const elHeadcount = document.getElementById("liveHeadcount");
+  const elObjects = document.getElementById("liveActiveObjects");
+  const elPending = document.getElementById("livePending");
+  if(elHeadcount) elHeadcount.textContent = headcount;
+  if(elObjects) elObjects.textContent = activeObjects;
+  if(elPending) elPending.textContent = fmtSum(pendingSum) + " so'm";
+}
+
+Store.init(renderLiveStats).then(renderLiveStats);
+</script>
 </body>
 </html>

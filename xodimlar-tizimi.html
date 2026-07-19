@@ -42,6 +42,25 @@
       <h1 class="page-title">Umumiy holat</h1>
       <p class="page-sub">Barcha bo'limlar bo'yicha so'nggi faoliyat bir qarashda.</p>
 
+      <div class="grid-4" style="margin-bottom:20px;">
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Jami xodimlar (jamoada)</div>
+          <div class="stat-num" id="statHeadcount">0</div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Faol obyektlar</div>
+          <div class="stat-num" id="statActiveObjects">0</div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Kutilayotgan to'lovlar</div>
+          <div class="stat-num" id="statPendingSum">0</div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Joriy oy — jarimalar summasi</div>
+          <div class="stat-num" id="statFinesSum">0</div>
+        </div>
+      </div>
+
       <div class="grid-2" style="margin-bottom:20px;">
         <div class="card">
           <div class="dim-heading" style="padding:18px 20px 0;"><span class="dim-label">Ish faoliyati yozuvlari</span></div>
@@ -87,6 +106,7 @@
         <div class="form-actions"><button type="submit" class="btn">Xodimni qo'shish</button></div>
       </form>
 
+      <div class="search-row"><input type="text" id="searchEmployees" placeholder="F.I.Sh., lavozim yoki telefon bo'yicha qidirish..."></div>
       <div class="dim-heading"><span class="dim-label">Xodimlar ro'yxati</span><span class="dim-num" id="countEmployees">0</span></div>
       <div class="table-wrap">
         <table>
@@ -251,6 +271,7 @@
         <div class="form-actions"><button type="submit" class="btn">Obyektni qo'shish</button></div>
       </form>
 
+      <div class="search-row"><input type="text" id="searchObjects" placeholder="Obyekt nomi yoki manzil bo'yicha qidirish..."></div>
       <div class="dim-heading"><span class="dim-label">Obyektlar ro'yxati</span><span class="dim-num" id="countObjects">0</span></div>
       <div id="objectsGrid" class="grid-3" style="margin-bottom:36px;"></div>
 
@@ -323,8 +344,44 @@ function refreshSelects(){
 }
 
 /* ---------- OVERVIEW ---------- */
+function currentMonthFinesTotal(){
+  const ym = currentMonthKey();
+  const attendance = Store.get("attendance", {});
+  const norms = Store.get("monthNorms", {});
+  const norm = norms[ym] || 26;
+  let total = 0;
+
+  function sumGroup(list, storeKey){
+    list.forEach(p=>{
+      const key = `${storeKey}:${p.id}:${ym}`;
+      const rec = attendance[key] || {};
+      const dayRate = norm ? (Number(p.salary)||0) / norm : 0;
+      Object.values(rec).forEach(state=>{
+        if(state==="late") total += dayRate*0.5;
+        if(state==="absent") total += dayRate;
+      });
+    });
+  }
+  sumGroup(getEmployees(), "emp");
+  sumGroup(getForemen(), "fore");
+  return Math.round(total);
+}
+
+function renderStats(){
+  const employees = getEmployees(), foremen = getForemen(), objects = getObjects(), payments = getPayments();
+  document.getElementById("statHeadcount").textContent = employees.length + foremen.length;
+  document.getElementById("statActiveObjects").textContent = objects.filter(o=>o.status==="jarayonda").length;
+  const pendingSum = payments.filter(p=>p.status!=="Toʻlandi").reduce((s,p)=>s+(Number(p.amount)||0),0);
+  document.getElementById("statPendingSum").textContent = fmtSum(pendingSum) + " so'm";
+  const finesSum = currentMonthFinesTotal();
+  const finesEl = document.getElementById("statFinesSum");
+  finesEl.textContent = fmtSum(finesSum) + " so'm";
+  finesEl.classList.toggle("danger", finesSum > 0);
+}
+
 function renderOverview(){
   const employees = getEmployees(), objects = getObjects(), foremen = getForemen();
+  renderStats();
 
   const feedWork = getWork().slice(0,6);
   document.getElementById("feedWork").innerHTML = feedWork.length ? feedWork.map(w=>`
@@ -359,8 +416,14 @@ function renderOverview(){
 
 /* ---------- EMPLOYEES ---------- */
 function renderEmployees(){
-  const employees = getEmployees(), objects = getObjects();
-  document.getElementById("countEmployees").textContent = employees.length;
+  const allEmployees = getEmployees(), objects = getObjects();
+  const q = (document.getElementById("searchEmployees").value||"").trim().toLowerCase();
+  const employees = q ? allEmployees.filter(e=>
+    (e.name||"").toLowerCase().includes(q) ||
+    (e.position||"").toLowerCase().includes(q) ||
+    (e.phone||"").toLowerCase().includes(q)
+  ) : allEmployees;
+  document.getElementById("countEmployees").textContent = allEmployees.length;
   document.getElementById("tblEmployees").innerHTML = employees.length ? employees.map(e=>`
     <tr>
       <td>${escapeHtml(e.name)}</td>
@@ -370,7 +433,7 @@ function renderEmployees(){
       <td>${fmtDate(e.hireDate)}</td>
       <td class="num">${fmtSum(e.salary)}</td>
       <td><button class="del-btn" data-store="employees" data-id="${e.id}">×</button></td>
-    </tr>`).join("") : `<tr><td colspan="7"><div class="empty-note">Hali xodim qo'shilmagan</div></td></tr>`;
+    </tr>`).join("") : `<tr><td colspan="7"><div class="empty-note">${q ? "Qidiruvga mos xodim topilmadi" : "Hali xodim qo'shilmagan"}</div></td></tr>`;
 }
 
 /* ---------- WORK RECORDS ---------- */
@@ -443,8 +506,13 @@ const statusLabels = {jarayonda:"Jarayonda", tugallangan:"Tugallangan", toxtatil
 const statusBadge = {jarayonda:"info", tugallangan:"ok", toxtatilgan:"neutral", kechikmoqda:"danger"};
 
 function renderObjects(){
-  const objects = getObjects(), foremen = getForemen(), materials = getMaterials();
-  document.getElementById("countObjects").textContent = objects.length;
+  const allObjects = getObjects(), foremen = getForemen(), materials = getMaterials();
+  const q = (document.getElementById("searchObjects").value||"").trim().toLowerCase();
+  const objects = q ? allObjects.filter(o=>
+    (o.name||"").toLowerCase().includes(q) ||
+    (o.address||"").toLowerCase().includes(q)
+  ) : allObjects;
+  document.getElementById("countObjects").textContent = allObjects.length;
   document.getElementById("objectsGrid").innerHTML = objects.length ? objects.map(o=>{
     const spent = materials.filter(m=>m.objectId===o.id).reduce((s,m)=>s+(m.qty*m.unitPrice),0);
     return `<div class="obj-card" data-status="${o.status}">
@@ -453,7 +521,7 @@ function renderObjects(){
       <div class="obj-meta"><span>${escapeHtml(nameById(foremen,o.foremanId))}</span><span class="badge ${statusBadge[o.status]}">${statusLabels[o.status]}</span></div>
       <div class="obj-meta"><span>${fmtDate(o.startDate)} → ${fmtDate(o.planEndDate)}</span><span>${fmtSum(spent)} so'm</span></div>
     </div>`;
-  }).join("") : `<div class="empty-note">Obyekt qo'shilmagan</div>`;
+  }).join("") : `<div class="empty-note">${q ? "Qidiruvga mos obyekt topilmadi" : "Obyekt qo'shilmagan"}</div>`;
 }
 
 function renderMaterials(){
@@ -538,6 +606,9 @@ document.getElementById("formMaterial").addEventListener("submit", e=>{
 ["filterWork","filterPayments","filterReports","filterMaterials"].forEach(id=>{
   document.getElementById(id).addEventListener("change", renderAll);
 });
+
+document.getElementById("searchEmployees").addEventListener("input", renderEmployees);
+document.getElementById("searchObjects").addEventListener("input", renderObjects);
 
 document.addEventListener("click", e=>{
   const btn = e.target.closest(".del-btn");
