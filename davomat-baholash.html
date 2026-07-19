@@ -19,6 +19,7 @@
       </div>
     </div>
     <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
+    <button type="button" class="btn btn-ghost" id="btnBackup" style="padding:8px 14px;">Zaxira nusxa</button>
     <a class="home-link" href="index.html">Bosh sahifa</a>
   </div>
 </header>
@@ -240,6 +241,8 @@ document.getElementById("formForeman").addEventListener("submit", e=>{
   Store.add("foremen", {id:uid(), name:f.get("name"), phone:f.get("phone"), objects:f.get("objects"), startDate:f.get("startDate"), salary:Number(f.get("salary"))});
   e.target.reset(); renderAll();
 });
+
+document.getElementById("btnBackup").addEventListener("click", downloadFullBackup);
 
 Store.init(renderAll).then(renderAll);
 </script>

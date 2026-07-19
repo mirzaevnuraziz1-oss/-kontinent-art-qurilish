@@ -170,3 +170,64 @@ function nameById(list, id){
   const found = list.find(i=>i.id===id);
   return found ? (found.name || found.fullName) : "—";
 }
+
+/* ==========================================================================
+   Full backup — downloads every stored key as one JSON file
+   ========================================================================== */
+function downloadFullBackup(){
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    data: Store._cache
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `kab-zaxira-${todayISO()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ==========================================================================
+   Generic sortable table headers.
+   Pass the <table> element, a map of column-index -> field name (or a
+   function that reads the sort value from a row object), and a render
+   callback to call after changing sort state. Sort state is stored on the
+   table element itself so multiple tables can reuse this independently.
+   ========================================================================== */
+function makeSortable(table, fieldMap, onSortChange){
+  const headers = table.querySelectorAll("thead th");
+  headers.forEach((th, idx)=>{
+    if(!fieldMap[idx]) return;
+    th.style.cursor = "pointer";
+    th.dataset.sortIdx = idx;
+    th.addEventListener("click", ()=>{
+      const current = table.dataset.sortField;
+      const field = fieldMap[idx];
+      let dir = "asc";
+      if(current === String(idx)){
+        dir = table.dataset.sortDir === "asc" ? "desc" : "asc";
+      }
+      table.dataset.sortField = String(idx);
+      table.dataset.sortDir = dir;
+      onSortChange(field, dir);
+    });
+  });
+}
+
+function sortRows(rows, field, dir){
+  const sorted = [...rows].sort((a,b)=>{
+    let va = typeof field === "function" ? field(a) : a[field];
+    let vb = typeof field === "function" ? field(b) : b[field];
+    if(typeof va === "string") va = va.toLowerCase();
+    if(typeof vb === "string") vb = vb.toLowerCase();
+    if(va == null) va = "";
+    if(vb == null) vb = "";
+    if(va < vb) return dir === "asc" ? -1 : 1;
+    if(va > vb) return dir === "asc" ? 1 : -1;
+    return 0;
+  });
+  return sorted;
+}

@@ -19,6 +19,7 @@
       </div>
     </div>
     <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
+    <button type="button" class="btn btn-ghost" id="btnBackup" style="padding:8px 14px;">Zaxira nusxa</button>
     <a class="home-link" href="index.html">Bosh sahifa</a>
   </div>
 </header>
@@ -429,14 +430,17 @@ function renderOverview(){
 }
 
 /* ---------- EMPLOYEES ---------- */
+let employeeSort = {field:null, dir:"asc"};
+
 function renderEmployees(){
   const allEmployees = getEmployees(), objects = getObjects();
   const q = (document.getElementById("searchEmployees").value||"").trim().toLowerCase();
-  const employees = q ? allEmployees.filter(e=>
+  let employees = q ? allEmployees.filter(e=>
     (e.name||"").toLowerCase().includes(q) ||
     (e.position||"").toLowerCase().includes(q) ||
     (e.phone||"").toLowerCase().includes(q)
   ) : allEmployees;
+  if(employeeSort.field) employees = sortRows(employees, employeeSort.field, employeeSort.dir);
   document.getElementById("countEmployees").textContent = allEmployees.length;
   document.getElementById("tblEmployees").innerHTML = employees.length ? employees.map(e=>`
     <tr>
@@ -630,6 +634,12 @@ document.getElementById("formMaterial").addEventListener("submit", e=>{
 document.getElementById("searchEmployees").addEventListener("input", renderEmployees);
 document.getElementById("searchObjects").addEventListener("input", renderObjects);
 
+makeSortable(
+  document.querySelector("#sec-employees table"),
+  {0:"name", 1:"position", 4:"hireDate", 5:"salary"},
+  (field, dir)=>{ employeeSort = {field, dir}; renderEmployees(); }
+);
+
 document.getElementById("btnExportEmployees").addEventListener("click", ()=>{
   const objects = getObjects();
   const rows = getEmployees().map(e=>({
@@ -664,6 +674,8 @@ document.addEventListener("click", e=>{
   Store.remove(btn.dataset.store, btn.dataset.id);
   renderAll();
 });
+
+document.getElementById("btnBackup").addEventListener("click", downloadFullBackup);
 
 Store.init(renderAll).then(renderAll);
 </script>

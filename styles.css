@@ -473,6 +473,7 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:.01em;}
   background:#fff;
 }
 table{ width:100%; border-collapse:collapse; font-size:13px; }
+thead th[data-sort-idx]:hover{ color:var(--caution); }
 thead th{
   background:var(--asphalt);
   color:var(--concrete-2);
