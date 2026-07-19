@@ -20,6 +20,7 @@
     </div>
     <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
     <button type="button" class="btn btn-ghost" id="btnBackup" style="padding:8px 14px;">Zaxira nusxa</button>
+    <button type="button" class="btn btn-ghost" id="btnPrint" style="padding:8px 14px;">Chop etish</button>
     <a class="home-link" href="index.html">Bosh sahifa</a>
   </div>
 </header>
@@ -243,6 +244,7 @@ document.getElementById("formForeman").addEventListener("submit", e=>{
 });
 
 document.getElementById("btnBackup").addEventListener("click", downloadFullBackup);
+document.getElementById("btnPrint").addEventListener("click", ()=>window.print());
 
 Store.init(renderAll).then(renderAll);
 </script>

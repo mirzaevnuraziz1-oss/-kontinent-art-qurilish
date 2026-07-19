@@ -474,6 +474,16 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:.01em;}
 }
 table{ width:100%; border-collapse:collapse; font-size:13px; }
 thead th[data-sort-idx]:hover{ color:var(--caution); }
+
+@media print{
+  .topbar, .railnav, .form-card, .search-row, .table-toolbar select,
+  #btnBackup, #btnPrint, #btnExportEmployees, #btnExportPayments, #btnExportMaterials,
+  .home-link, .del-btn, .att-controls{ display:none !important; }
+  .app-shell{ display:block !important; }
+  .content{ padding:0 !important; }
+  body{ background:#fff !important; }
+  .card{ box-shadow:none !important; border:1px solid #ccc !important; }
+}
 thead th{
   background:var(--asphalt);
   color:var(--concrete-2);

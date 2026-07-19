@@ -20,6 +20,7 @@
     </div>
     <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
     <button type="button" class="btn btn-ghost" id="btnBackup" style="padding:8px 14px;">Zaxira nusxa</button>
+    <button type="button" class="btn btn-ghost" id="btnPrint" style="padding:8px 14px;">Chop etish</button>
     <a class="home-link" href="index.html">Bosh sahifa</a>
   </div>
 </header>
@@ -59,6 +60,17 @@
         <div class="card card-pad stat-card">
           <div class="stat-label">Joriy oy — jarimalar summasi</div>
           <div class="stat-num" id="statFinesSum">0</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="card card-pad">
+          <div class="stat-label" style="margin-bottom:14px;">Obyektlar bo'yicha xarajatlar</div>
+          <canvas id="chartObjectSpend" height="160"></canvas>
+        </div>
+        <div class="card card-pad">
+          <div class="stat-label" style="margin-bottom:14px;">Oxirgi 6 oy — jarima summasi</div>
+          <canvas id="chartFinesTrend" height="160"></canvas>
         </div>
       </div>
 
@@ -320,6 +332,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="app.js"></script>
 <script>
 initNav();
@@ -394,9 +407,84 @@ function renderStats(){
   finesEl.classList.toggle("danger", finesSum > 0);
 }
 
+let objectSpendChart = null;
+let finesTrendChart = null;
+
+function monthsBack(n){
+  const out = [];
+  const now = new Date();
+  for(let i=n-1; i>=0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    out.push(d.toISOString().slice(0,7));
+  }
+  return out;
+}
+
+function computeFinesForMonth(ym){
+  const attendance = Store.get("attendance", {});
+  const norms = Store.get("monthNorms", {});
+  const norm = norms[ym] || 26;
+  let total = 0;
+  function sumGroup(list, storeKey){
+    list.forEach(p=>{
+      const key = `${storeKey}:${p.id}:${ym}`;
+      const rec = attendance[key] || {};
+      const dayRate = norm ? (Number(p.salary)||0) / norm : 0;
+      Object.values(rec).forEach(state=>{
+        if(state==="late") total += dayRate*0.5;
+        if(state==="absent") total += dayRate;
+      });
+    });
+  }
+  sumGroup(getEmployees(), "emp");
+  sumGroup(getForemen(), "fore");
+  return Math.round(total);
+}
+
+function renderCharts(){
+  if(typeof Chart === "undefined") return;
+  const objects = getObjects(), materials = getMaterials();
+
+  const spendByObject = objects.map(o=>({
+    name: o.name,
+    spend: materials.filter(m=>m.objectId===o.id).reduce((s,m)=>s+(m.qty*m.unitPrice),0)
+  })).filter(o=>o.spend > 0).sort((a,b)=>b.spend-a.spend).slice(0,8);
+
+  const ctx1 = document.getElementById("chartObjectSpend");
+  if(objectSpendChart) objectSpendChart.destroy();
+  objectSpendChart = new Chart(ctx1, {
+    type: "bar",
+    data: {
+      labels: spendByObject.length ? spendByObject.map(o=>o.name) : ["Ma'lumot yo'q"],
+      datasets: [{ data: spendByObject.length ? spendByObject.map(o=>o.spend) : [0], backgroundColor: "#e8590c" }]
+    },
+    options: {
+      plugins:{ legend:{ display:false } },
+      scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>fmtSum(v) } } }
+    }
+  });
+
+  const months = monthsBack(6);
+  const finesData = months.map(computeFinesForMonth);
+  const ctx2 = document.getElementById("chartFinesTrend");
+  if(finesTrendChart) finesTrendChart.destroy();
+  finesTrendChart = new Chart(ctx2, {
+    type: "line",
+    data: {
+      labels: months.map(monthLabel),
+      datasets: [{ data: finesData, borderColor: "#c43b3b", backgroundColor:"rgba(196,59,59,.12)", fill:true, tension:.25 }]
+    },
+    options: {
+      plugins:{ legend:{ display:false } },
+      scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>fmtSum(v) } } }
+    }
+  });
+}
+
 function renderOverview(){
   const employees = getEmployees(), objects = getObjects(), foremen = getForemen();
   renderStats();
+  renderCharts();
 
   const feedWork = getWork().slice(0,6);
   document.getElementById("feedWork").innerHTML = feedWork.length ? feedWork.map(w=>`
@@ -676,6 +764,7 @@ document.addEventListener("click", e=>{
 });
 
 document.getElementById("btnBackup").addEventListener("click", downloadFullBackup);
+document.getElementById("btnPrint").addEventListener("click", ()=>window.print());
 
 Store.init(renderAll).then(renderAll);
 </script>
