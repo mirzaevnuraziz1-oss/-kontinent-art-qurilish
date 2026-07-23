@@ -215,6 +215,25 @@ function updateThemeButtonLabel(){
   btn.textContent = isDark ? "☀️ Yorug'" : "🌙 Tungi";
 }
 
+/* ==========================================================================
+   Viewer role — a lightweight, per-browser label ("Direktor" / "Zam. direktor")
+   shown in the header. Not real access control — just makes clear who's
+   looking at the system on a shared device.
+   ========================================================================== */
+const ROLE_KEY = "kab_role";
+
+function initRoleBadge(){
+  const sel = document.getElementById("roleSelect");
+  if(!sel) return;
+  try{
+    const saved = localStorage.getItem(ROLE_KEY);
+    if(saved) sel.value = saved;
+  }catch(e){ /* ignore */ }
+  sel.addEventListener("change", ()=>{
+    try{ localStorage.setItem(ROLE_KEY, sel.value); }catch(e){}
+  });
+}
+
 function nameById(list, id){
   const found = list.find(i=>i.id===id);
   return found ? (found.name || found.fullName) : "—";

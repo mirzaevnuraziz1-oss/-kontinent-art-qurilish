@@ -140,6 +140,10 @@
       </div>
     </div>
     <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
+    <select id="roleSelect" class="role-select" style="color:var(--ondark-text);">
+      <option value="Direktor">Direktor</option>
+      <option value="Zam. direktor">Zam. direktor</option>
+    </select>
     <button type="button" class="btn btn-ghost" id="btnTheme" style="padding:8px 14px;color:var(--ondark-text);border-color:rgba(255,255,255,.25);">🌙 Tungi</button>
     <button type="button" class="btn btn-ghost" id="btnBackup" style="padding:8px 14px;color:var(--ondark-text);border-color:rgba(255,255,255,.25);">Zaxira nusxa</button>
   </div>
@@ -215,6 +219,7 @@ function renderLiveStats(){
 }
 
 Store.init(renderLiveStats).then(renderLiveStats);
+initRoleBadge();
 document.getElementById("btnTheme").addEventListener("click", toggleTheme);
 updateThemeButtonLabel();
 document.getElementById("btnBackup").addEventListener("click", downloadFullBackup);

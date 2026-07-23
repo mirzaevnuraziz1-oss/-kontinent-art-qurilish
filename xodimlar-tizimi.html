@@ -19,6 +19,10 @@
       </div>
     </div>
     <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
+    <select id="roleSelect" class="role-select">
+      <option value="Direktor">Direktor</option>
+      <option value="Zam. direktor">Zam. direktor</option>
+    </select>
     <button type="button" class="btn btn-ghost" id="btnTheme" style="padding:8px 14px;">🌙 Tungi</button>
     <button type="button" class="btn btn-ghost" id="btnBackup" style="padding:8px 14px;">Zaxira nusxa</button>
     <button type="button" class="btn btn-ghost" id="btnPrint" style="padding:8px 14px;">Chop etish</button>
@@ -88,7 +92,7 @@
         </div>
       </div>
 
-      <div class="grid-2">
+      <div class="grid-3">
         <div class="card">
           <div class="dim-heading" style="padding:18px 20px 0;"><span class="dim-label">Prorablardan</span></div>
           <p style="padding:0 20px 6px;font-size:12px;color:var(--ink-soft);">So'nggi prorab hisobotlari</p>
@@ -98,6 +102,11 @@
           <div class="dim-heading" style="padding:18px 20px 0;"><span class="dim-label">Obyekt xarajatlari</span></div>
           <p style="padding:0 20px 6px;font-size:12px;color:var(--ink-soft);">So'nggi material xarajatlari</p>
           <div id="feedMaterials" class="feed-card"></div>
+        </div>
+        <div class="card">
+          <div class="dim-heading" style="padding:18px 20px 0;"><span class="dim-label">Obyekt holati o'zgarishlari</span></div>
+          <p style="padding:0 20px 6px;font-size:12px;color:var(--ink-soft);">So'nggi holat almashishlari</p>
+          <div id="feedObjectHistory" class="feed-card"></div>
         </div>
       </div>
     </section>
@@ -337,6 +346,7 @@
 <script src="app.js"></script>
 <script>
 initNav();
+initRoleBadge();
 
 function exportToExcel(rows, filename, sheetName){
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -516,6 +526,13 @@ function renderOverview(){
       <div class="top-row"><span class="title">${escapeHtml(m.materialName)}</span><span class="meta">${fmtDate(m.date)}</span></div>
       <span class="meta">${escapeHtml(nameById(objects,m.objectId))} · ${m.qty} ${m.unit} × ${fmtSum(m.unitPrice)} so'm</span>
     </div>`).join("") : `<div class="empty-note">Xarajatlar yo'q</div>`;
+
+  const history = Store.get("objectHistory", []).slice(0,6);
+  document.getElementById("feedObjectHistory").innerHTML = history.length ? history.map(h=>`
+    <div class="feed-item">
+      <div class="top-row"><span class="title">${escapeHtml(h.objectName)}</span><span class="meta">${fmtDate(h.changedAt.slice(0,10))}</span></div>
+      <span class="meta">${statusLabels[h.oldStatus]||h.oldStatus} → ${statusLabels[h.newStatus]||h.newStatus} · ${escapeHtml(h.changedBy)}</span>
+    </div>`).join("") : `<div class="empty-note">O'zgarishlar yo'q</div>`;
 }
 
 /* ---------- EMPLOYEES ---------- */
@@ -624,15 +641,26 @@ function renderObjects(){
     const spent = materials.filter(m=>m.objectId===o.id).reduce((s,m)=>s+(m.qty*m.unitPrice),0);
     const plan = Number(o.planBudget)||0;
     const overBudget = plan > 0 && spent > plan;
+    let deadlineNote = "";
+    if(o.status === "jarayonda" && o.planEndDate){
+      const daysLeft = Math.ceil((new Date(o.planEndDate) - new Date(todayISO())) / 86400000);
+      if(daysLeft < 0) deadlineNote = `<div class="badge danger" style="margin-top:8px;">Muddat o'tib ketgan (${Math.abs(daysLeft)} kun)</div>`;
+      else if(daysLeft <= 14) deadlineNote = `<div class="badge pending" style="margin-top:8px;">Muddatga ${daysLeft} kun qoldi</div>`;
+    }
     const budgetLine = plan > 0
       ? `<div class="obj-meta"><span>Reja: ${fmtSum(plan)} so'm</span><span style="color:${overBudget?'var(--danger)':'inherit'};">Fakt: ${fmtSum(spent)} so'm${overBudget?' ⚠':''}</span></div>`
       : `<div class="obj-meta"><span>${fmtDate(o.startDate)} → ${fmtDate(o.planEndDate)}</span><span>${fmtSum(spent)} so'm</span></div>`;
     return `<div class="obj-card" data-status="${o.status}">
       <div class="obj-name">${escapeHtml(o.name)}</div>
       <div class="obj-addr">${escapeHtml(o.address)}</div>
-      <div class="obj-meta"><span>${escapeHtml(nameById(foremen,o.foremanId))}</span><span class="badge ${statusBadge[o.status]}">${statusLabels[o.status]}</span></div>
+      <div class="obj-meta"><span>${escapeHtml(nameById(foremen,o.foremanId))}</span>
+        <select class="status-select" data-obj-id="${o.id}">
+          ${Object.keys(statusLabels).map(s=>`<option value="${s}" ${s===o.status?'selected':''}>${statusLabels[s]}</option>`).join("")}
+        </select>
+      </div>
       ${plan > 0 ? `<div class="obj-meta"><span>${fmtDate(o.startDate)} → ${fmtDate(o.planEndDate)}</span></div>` : ''}
       ${budgetLine}
+      ${deadlineNote}
     </div>`;
   }).join("") : `<div class="empty-note">${q ? "Qidiruvga mos obyekt topilmadi" : "Obyekt qo'shilmagan"}</div>`;
 }
@@ -719,6 +747,27 @@ document.getElementById("formMaterial").addEventListener("submit", e=>{
 
 ["filterWork","filterPayments","filterReports","filterMaterials"].forEach(id=>{
   document.getElementById(id).addEventListener("change", renderAll);
+});
+
+document.addEventListener("change", e=>{
+  const sel = e.target.closest(".status-select");
+  if(!sel) return;
+  const objects = getObjects();
+  const obj = objects.find(o=>o.id===sel.dataset.objId);
+  if(!obj) return;
+  const oldStatus = obj.status;
+  const newStatus = sel.value;
+  if(oldStatus === newStatus) return;
+  obj.status = newStatus;
+  Store.set("objects", objects);
+  const history = Store.get("objectHistory", []);
+  history.unshift({
+    id: uid(), objectId: obj.id, objectName: obj.name,
+    oldStatus, newStatus, changedAt: new Date().toISOString(),
+    changedBy: (function(){ try{ return localStorage.getItem("kab_role") || "—"; }catch(e){ return "—"; } })()
+  });
+  Store.set("objectHistory", history.slice(0,200));
+  renderAll();
 });
 
 document.getElementById("searchEmployees").addEventListener("input", renderEmployees);
