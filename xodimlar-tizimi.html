@@ -183,8 +183,22 @@
       <h1 class="page-title">Oyliklar</h1>
       <p class="page-sub">To'lov yozuvlarini kiritish va to'lovlar tarixi.</p>
 
+      <div class="card card-pad" style="margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+          <h3 style="margin:0;">Oylik hisob-kitobi (avtomatik, davomat asosida)</h3>
+          <div class="field" style="margin:0;"><input type="month" id="payrollMonth"></div>
+        </div>
+        <p class="page-sub" style="margin-top:-6px;">Har bir xodim/prorab uchun oklad, "Davomat va baholash" bo'limidagi belgilar va joriy oy normasi asosida hisoblangan yakuniy summa. "To'lov yaratish" bosilganda tayyor to'lov yozuvi pastdagi jadvalga (holati: Kutilmoqda) qo'shiladi.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>F.I.Sh.</th><th>Turi</th><th class="num">Oylik maosh</th><th class="num">Ishlagan/Norma</th><th class="num">Jarima</th><th class="num">Hisoblangan summa</th><th></th></tr></thead>
+            <tbody id="tblPayrollCalc"></tbody>
+          </table>
+        </div>
+      </div>
+
       <form id="formPayment" class="card form-card">
-        <h3>To'lov yozuvi qo'shish</h3>
+        <h3>To'lov yozuvi qo'shish (qo'lda)</h3>
         <div class="form-grid">
           <div class="field"><label>Xodim</label><select required name="employeeId"></select></div>
           <div class="field"><label>Oy</label><input required type="month" name="month"></div>
@@ -209,7 +223,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Xodim</th><th>Oy</th><th class="num">Summa</th><th>To'lov sanasi</th><th>Holat</th><th></th></tr></thead>
+          <thead><tr><th>F.I.Sh.</th><th>Oy</th><th class="num">Summa</th><th>To'lov sanasi</th><th>Holat</th><th></th></tr></thead>
           <tbody id="tblPayments"></tbody>
         </table>
       </div>
@@ -227,6 +241,7 @@
           <div class="field"><label>Telefon</label><input name="phone" placeholder="+998 -- --- -- --"></div>
           <div class="field"><label>Biriktirilgan obyekt(lar)</label><input name="objects" placeholder="Masalan: Obyekt-1, Obyekt-2"></div>
           <div class="field"><label>Ish boshlagan sana</label><input required type="date" name="startDate"></div>
+          <div class="field"><label>Oylik maosh (so'm)</label><input required type="number" min="0" name="salary" placeholder="0"></div>
         </div>
         <div class="form-actions"><button type="submit" class="btn">Prorabni qo'shish</button></div>
       </form>
@@ -234,7 +249,7 @@
       <div class="dim-heading"><span class="dim-label">Prorablar ro'yxati</span><span class="dim-num" id="countForemen">0</span></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>F.I.Sh.</th><th>Telefon</th><th class="wrap">Biriktirilgan obyekt(lar)</th><th>Boshlagan sana</th><th></th></tr></thead>
+          <thead><tr><th>F.I.Sh.</th><th>Telefon</th><th class="wrap">Biriktirilgan obyekt(lar)</th><th>Boshlagan sana</th><th class="num">Oylik maosh</th><th></th></tr></thead>
           <tbody id="tblForemen"></tbody>
         </table>
       </div>
@@ -351,6 +366,7 @@
 <script>
 initNav();
 initRoleBadge();
+document.getElementById("payrollMonth").value = currentMonthKey();
 
 function exportToExcel(rows, filename, sheetName){
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -381,7 +397,7 @@ function refreshSelects(){
   });
 
   fillSelect(document.getElementById("filterWork"), employees, {value:"id", label:"name", includeAll:true});
-  fillSelect(document.getElementById("filterPayments"), employees, {value:"id", label:"name", includeAll:true});
+  fillSelect(document.getElementById("filterPayments"), [...employees, ...foremen], {value:"id", label:"name", includeAll:true});
   fillSelect(document.getElementById("filterReports"), foremen, {value:"id", label:"name", includeAll:true});
   fillSelect(document.getElementById("filterMaterials"), objects, {value:"id", label:"name", includeAll:true});
 }
@@ -512,7 +528,7 @@ function renderOverview(){
   const pending = getPayments().filter(p=>p.status!=="Toʻlandi").slice(0,6);
   document.getElementById("feedPayments").innerHTML = pending.length ? pending.map(p=>`
     <div class="feed-item">
-      <div class="top-row"><span class="title">${escapeHtml(nameById(employees,p.employeeId))}</span><span class="badge ${p.status==='Kechikkan'?'danger':'pending'}">${p.status}</span></div>
+      <div class="top-row"><span class="title">${escapeHtml(personNameByType(p.employeeId, p.personType))}</span><span class="badge ${p.status==='Kechikkan'?'danger':'pending'}">${p.status}</span></div>
       <span class="meta">${monthLabel(p.month)} · ${fmtSum(p.amount)} so'm</span>
     </div>`).join("") : `<div class="empty-note">Kutilayotgan to'lovlar yo'q</div>`;
 
@@ -581,14 +597,71 @@ function renderWork(){
 }
 
 /* ---------- PAYMENTS ---------- */
+function personNameByType(id, personType){
+  const list = personType === "fore" ? getForemen() : getEmployees();
+  return nameById(list, id);
+}
+
+/* Compute attendance-based pay for one person in one month.
+   storeKey is "emp" or "fore" — matches the attendance-key prefix used on
+   the Davomat va baholash page, so both pages read the exact same numbers. */
+function computeFinalPay(person, ym, storeKey){
+  const attendance = Store.get("attendance", {});
+  const norms = Store.get("monthNorms", {});
+  const norm = norms[ym] || 26;
+  const key = `${storeKey}:${person.id}:${ym}`;
+  const rec = attendance[key] || {};
+  const salary = Number(person.salary) || 0;
+  const dayRate = norm ? salary / norm : 0;
+  let workedDays = 0, fine = 0;
+  Object.values(rec).forEach(state=>{
+    if(state==="present") workedDays += 1;
+    if(state==="late"){ workedDays += 1; fine += dayRate*0.5; }
+    if(state==="absent"){ fine += dayRate; }
+  });
+  const finalPay = Math.max(salary - fine, 0);
+  return { norm, workedDays, fine: Math.round(fine), finalPay: Math.round(finalPay) };
+}
+
+function renderPayrollCalc(){
+  const monthInput = document.getElementById("payrollMonth");
+  const ym = monthInput.value || currentMonthKey();
+  const payments = getPayments();
+
+  function alreadyGenerated(personId, personType){
+    return payments.some(p => p.employeeId===personId && p.month===ym && (p.personType||"emp")===personType);
+  }
+
+  function rowsFor(list, storeKey, typeLabel, personType){
+    if(!list.length) return "";
+    return list.map(p=>{
+      const {norm, workedDays, fine, finalPay} = computeFinalPay(p, ym, storeKey);
+      const done = alreadyGenerated(p.id, personType);
+      return `<tr>
+        <td>${escapeHtml(p.name)}</td>
+        <td>${typeLabel}</td>
+        <td class="num">${fmtSum(p.salary)}</td>
+        <td class="num">${workedDays}/${norm}</td>
+        <td class="num" style="color:${fine>0?'var(--danger)':'inherit'};">${fmtSum(fine)}</td>
+        <td class="num">${fmtSum(finalPay)}</td>
+        <td>${done
+          ? `<span class="badge ok">Yaratilgan</span>`
+          : `<button type="button" class="btn btn-ghost btn-generate-payment" data-person-id="${p.id}" data-person-type="${personType}" data-month="${ym}" data-amount="${finalPay}">To'lov yaratish</button>`}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  const body = rowsFor(getEmployees(), "emp", "Xodim", "emp") + rowsFor(getForemen(), "fore", "Prorab", "fore");
+  document.getElementById("tblPayrollCalc").innerHTML = body || `<tr><td colspan="7"><div class="empty-note">Xodim yoki prorab qo'shilmagan</div></td></tr>`;
+}
+
 function renderPayments(){
-  const employees = getEmployees();
   const filterVal = document.getElementById("filterPayments").value;
   const list = getPayments().filter(p=>!filterVal || p.employeeId===filterVal);
   document.getElementById("tblPayments").innerHTML = list.length ? list.map(p=>{
     const cls = p.status==="Toʻlandi" ? "ok" : p.status==="Kechikkan" ? "danger" : "pending";
     return `<tr>
-      <td>${escapeHtml(nameById(employees,p.employeeId))}</td>
+      <td>${escapeHtml(personNameByType(p.employeeId, p.personType))}</td>
       <td>${monthLabel(p.month)}</td>
       <td class="num">${fmtSum(p.amount)}</td>
       <td>${fmtDate(p.payDate)}</td>
@@ -596,6 +669,7 @@ function renderPayments(){
       <td><button class="del-btn" data-store="payments" data-id="${p.id}">×</button></td>
     </tr>`;
   }).join("") : `<tr><td colspan="6"><div class="empty-note">To'lovlar yo'q</div></td></tr>`;
+  renderPayrollCalc();
 }
 
 /* ---------- FOREMEN ---------- */
@@ -608,8 +682,9 @@ function renderForemen(){
       <td class="mono">${escapeHtml(f.phone||"—")}</td>
       <td class="wrap">${escapeHtml(f.objects||"—")}</td>
       <td>${fmtDate(f.startDate)}</td>
+      <td class="num">${fmtSum(f.salary)}</td>
       <td><button class="del-btn" data-store="foremen" data-id="${f.id}">×</button></td>
-    </tr>`).join("") : `<tr><td colspan="5"><div class="empty-note">Prorab qo'shilmagan</div></td></tr>`;
+    </tr>`).join("") : `<tr><td colspan="6"><div class="empty-note">Prorab qo'shilmagan</div></td></tr>`;
 }
 
 /* ---------- REPORTS ---------- */
@@ -724,7 +799,7 @@ document.getElementById("formPayment").addEventListener("submit", e=>{
 document.getElementById("formForeman").addEventListener("submit", e=>{
   e.preventDefault();
   const f = new FormData(e.target);
-  Store.add("foremen", {id:uid(), name:f.get("name"), phone:f.get("phone"), objects:f.get("objects"), startDate:f.get("startDate")});
+  Store.add("foremen", {id:uid(), name:f.get("name"), phone:f.get("phone"), objects:f.get("objects"), startDate:f.get("startDate"), salary:Number(f.get("salary"))});
   e.target.reset(); renderAll();
 });
 
@@ -751,6 +826,23 @@ document.getElementById("formMaterial").addEventListener("submit", e=>{
 
 ["filterWork","filterPayments","filterReports","filterMaterials"].forEach(id=>{
   document.getElementById(id).addEventListener("change", renderAll);
+});
+
+document.getElementById("payrollMonth").addEventListener("change", renderPayrollCalc);
+
+document.addEventListener("click", e=>{
+  const btn = e.target.closest(".btn-generate-payment");
+  if(!btn) return;
+  Store.add("payments", {
+    id: uid(),
+    employeeId: btn.dataset.personId,
+    personType: btn.dataset.personType,
+    month: btn.dataset.month,
+    amount: Number(btn.dataset.amount),
+    payDate: todayISO(),
+    status: "Kutilmoqda"
+  });
+  renderAll();
 });
 
 document.addEventListener("change", e=>{
@@ -793,9 +885,10 @@ document.getElementById("btnExportEmployees").addEventListener("click", ()=>{
 });
 
 document.getElementById("btnExportPayments").addEventListener("click", ()=>{
-  const employees = getEmployees();
   const rows = getPayments().map(p=>({
-    "Xodim": nameById(employees,p.employeeId), "Oy": p.month, "Summa": p.amount,
+    "F.I.Sh.": personNameByType(p.employeeId, p.personType),
+    "Turi": p.personType==="fore" ? "Prorab" : "Xodim",
+    "Oy": p.month, "Summa": p.amount,
     "To'lov sanasi": p.payDate, "Holat": p.status
   }));
   exportToExcel(rows, "toliqlar.xlsx", "Oyliklar");
