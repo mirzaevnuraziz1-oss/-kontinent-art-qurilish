@@ -35,6 +35,11 @@
 
   --radius: 3px;
   --shadow-card: 0 1px 0 rgba(0,0,0,.04), 0 8px 20px -12px rgba(20,20,20,.25);
+
+  /* Fixed colors for surfaces that are always dark regardless of theme
+     (topbar, hero) — must NOT flip with data-theme, or text disappears. */
+  --ondark-text:   #eeeae1;
+  --ondark-muted:  #8a939b;
 }
 
 html[data-theme="dark"]{
@@ -128,7 +133,7 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:.01em;}
    ========================================================================== */
 .topbar{
   background:var(--asphalt);
-  color:var(--concrete);
+  color:var(--ondark-text);
   border-bottom:3px solid var(--safety);
   position:sticky;
   top:0;
@@ -171,7 +176,7 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:.01em;}
 }
 .brand-text .sub{
   font-size:11px;
-  color:var(--steel-2);
+  color:var(--ondark-muted);
   letter-spacing:.03em;
 }
 .saved-pill{
@@ -198,13 +203,13 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:.01em;}
 .home-link{
   font-family:var(--font-mono);
   font-size:12px;
-  color:var(--steel-2);
+  color:var(--ondark-muted);
   border:1px solid rgba(255,255,255,.14);
   padding:7px 12px;
   border-radius:2px;
   transition:.15s;
 }
-.home-link:hover{ color:var(--concrete); border-color:rgba(255,255,255,.35); }
+.home-link:hover{ color:var(--ondark-text); border-color:rgba(255,255,255,.35); }
 
 /* ==========================================================================
    Layout: nav rail + content
@@ -219,7 +224,7 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:.01em;}
 }
 .railnav{
   background:var(--asphalt-2);
-  color:var(--concrete-2);
+  color:var(--ondark-text);
   padding:22px 0;
   border-right:1px solid rgba(0,0,0,.2);
 }
@@ -228,7 +233,7 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:.01em;}
   font-size:10px;
   letter-spacing:.14em;
   text-transform:uppercase;
-  color:var(--steel-2);
+  color:var(--ondark-muted);
   padding:0 20px 10px;
 }
 .railnav button{
@@ -240,7 +245,7 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:.01em;}
   background:none;
   border:none;
   border-left:3px solid transparent;
-  color:var(--concrete-2);
+  color:var(--ondark-text);
   padding:11px 20px;
   font-size:13.5px;
   font-family:var(--font-body);
@@ -250,7 +255,7 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:.01em;}
 .railnav button .num{
   font-family:var(--font-mono);
   font-size:10.5px;
-  color:var(--steel-2);
+  color:var(--ondark-muted);
   width:18px;
 }
 .railnav button:hover{ background:rgba(255,255,255,.04); color:#fff; }
