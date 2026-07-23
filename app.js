@@ -166,6 +166,55 @@ function fillSelect(selectEl, items, {value="id", label="name", placeholder="Tan
   if([...selectEl.options].some(o=>o.value===current)) selectEl.value = current;
 }
 
+/* ==========================================================================
+   Basic form hints: hire/start dates can't be in the future, phone numbers
+   get a light format check. Doesn't block typing — just flags on blur/submit
+   via the browser's native validity UI (title + pattern).
+   ========================================================================== */
+function applyFormHints(){
+  const today = todayISO();
+  document.querySelectorAll('input[type="date"][name="hireDate"], input[type="date"][name="startDate"]').forEach(el=>{
+    el.max = today;
+    el.title = "Sana bugungi kundan keyin bo'lishi mumkin emas";
+  });
+  document.querySelectorAll('input[name="phone"]').forEach(el=>{
+    el.pattern = "^\\+?[0-9\\s-]{9,15}$";
+    el.title = "Telefon raqamini to'g'ri formatda kiriting, masalan: +998 90 123 45 67";
+  });
+}
+
+/* ==========================================================================
+   Dark / light theme toggle. Preference is saved per-browser (not synced
+   across devices — it's a display preference, not business data).
+   ========================================================================== */
+const THEME_KEY = "kab_theme";
+
+(function applySavedTheme(){
+  try{
+    const saved = localStorage.getItem(THEME_KEY);
+    if(saved === "dark") document.documentElement.setAttribute("data-theme", "dark");
+  }catch(e){ /* ignore */ }
+})();
+
+function toggleTheme(){
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  if(isDark){
+    document.documentElement.removeAttribute("data-theme");
+    try{ localStorage.setItem(THEME_KEY, "light"); }catch(e){}
+  } else {
+    document.documentElement.setAttribute("data-theme", "dark");
+    try{ localStorage.setItem(THEME_KEY, "dark"); }catch(e){}
+  }
+  updateThemeButtonLabel();
+}
+
+function updateThemeButtonLabel(){
+  const btn = document.getElementById("btnTheme");
+  if(!btn) return;
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  btn.textContent = isDark ? "☀️ Yorug'" : "🌙 Tungi";
+}
+
 function nameById(list, id){
   const found = list.find(i=>i.id===id);
   return found ? (found.name || found.fullName) : "—";

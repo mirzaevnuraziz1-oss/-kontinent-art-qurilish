@@ -37,6 +37,21 @@
   --shadow-card: 0 1px 0 rgba(0,0,0,.04), 0 8px 20px -12px rgba(20,20,20,.25);
 }
 
+html[data-theme="dark"]{
+  --concrete:     #1c1e1f;
+  --concrete-2:   #26282b;
+  --paper:        #24262a;
+  --ink:          #eeeae1;
+  --ink-soft:     #b8b2a4;
+  --line:         rgba(255,255,255,.12);
+  --steel:        #9aa3ac;
+  --steel-2:      #6b7480;
+  --success-bg:   #1e3324;
+  --pending-bg:   #332a11;
+  --danger-bg:    #3a1f1f;
+  --shadow-card: 0 1px 0 rgba(0,0,0,.2), 0 8px 20px -12px rgba(0,0,0,.6);
+}
+
 *,*::before,*::after{ box-sizing:border-box; }
 html{ scroll-behavior:smooth; }
 body{
@@ -477,7 +492,7 @@ thead th[data-sort-idx]:hover{ color:var(--caution); }
 
 @media print{
   .topbar, .railnav, .form-card, .search-row, .table-toolbar select,
-  #btnBackup, #btnPrint, #btnExportEmployees, #btnExportPayments, #btnExportMaterials,
+  #btnBackup, #btnPrint, #btnTheme, #btnExportEmployees, #btnExportPayments, #btnExportMaterials,
   .home-link, .del-btn, .att-controls{ display:none !important; }
   .app-shell{ display:block !important; }
   .content{ padding:0 !important; }

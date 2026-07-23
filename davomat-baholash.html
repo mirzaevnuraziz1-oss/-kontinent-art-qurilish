@@ -19,6 +19,7 @@
       </div>
     </div>
     <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
+    <button type="button" class="btn btn-ghost" id="btnTheme" style="padding:8px 14px;">🌙 Tungi</button>
     <button type="button" class="btn btn-ghost" id="btnBackup" style="padding:8px 14px;">Zaxira nusxa</button>
     <button type="button" class="btn btn-ghost" id="btnPrint" style="padding:8px 14px;">Chop etish</button>
     <a class="home-link" href="index.html">Bosh sahifa</a>
@@ -200,6 +201,7 @@ function buildAttTable(tableEl, people, storeKey){
 
 function renderAll(){
   refreshSelects();
+  applyFormHints();
   normInput.value = currentNorm();
   normBadge.textContent = `${currentNorm()} ish kuni`;
   buildAttTable(document.getElementById("attTableEmployees"), getEmployees(), "emp");
@@ -243,6 +245,8 @@ document.getElementById("formForeman").addEventListener("submit", e=>{
   e.target.reset(); renderAll();
 });
 
+document.getElementById("btnTheme").addEventListener("click", toggleTheme);
+updateThemeButtonLabel();
 document.getElementById("btnBackup").addEventListener("click", downloadFullBackup);
 document.getElementById("btnPrint").addEventListener("click", ()=>window.print());
 
