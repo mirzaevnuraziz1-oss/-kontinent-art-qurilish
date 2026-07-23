@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <script src="password-gate (1).js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Kunlik hisobot — KONTINENT ART BUSINESS</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  body{ background:var(--concrete-1, #f2f1ec); }
+  .mobile-wrap{ max-width:480px; margin:0 auto; padding:16px 16px 40px; }
+  .mobile-top{ display:flex; align-items:center; gap:10px; padding:14px 2px 18px; }
+  .mobile-top .brand-mark{ width:34px;height:34px;border-radius:8px;background:var(--ink,#1a1a1a);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px; }
+  .mobile-top .name{ font-weight:600; font-size:15px; }
+  .mobile-top .sub{ font-size:12px; color:var(--steel); }
+  .m-field{ margin-bottom:14px; }
+  .m-field label{ display:block; font-size:12px; color:var(--steel); margin-bottom:5px; }
+  .m-field select, .m-field textarea, .m-field input[type="text"]{
+    width:100%; padding:12px 14px; font-size:15px; border-radius:10px;
+    border:1px solid var(--concrete-2, #ddd8cc); background:#fff;
+  }
+  .m-field textarea{ min-height:90px; resize:vertical; }
+  .photo-box{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    border:2px dashed var(--concrete-2, #ccc); border-radius:12px;
+    padding:26px 14px; margin-bottom:14px; color:var(--steel); font-size:14px;
+    cursor:pointer; background:#fff; text-align:center;
+  }
+  .photo-box img{ max-width:100%; max-height:180px; border-radius:8px; }
+  .toggle-row{
+    display:flex; align-items:center; justify-content:space-between;
+    background:#fff; border-radius:10px; padding:12px 14px; margin-bottom:14px;
+    border:1px solid var(--concrete-2, #ddd8cc);
+  }
+  .pill-btn{
+    font-size:13px; padding:7px 16px; border-radius:20px; border:1px solid var(--concrete-2, #ccc);
+    background:#fff; color:var(--steel); cursor:pointer;
+  }
+  .pill-btn.active-no{ background:var(--success-bg); color:var(--success); border-color:var(--success); }
+  .pill-btn.active-yes{ background:var(--danger-bg); color:var(--danger); border-color:var(--danger); }
+  .geo-note{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--steel); margin-bottom:16px; }
+  .submit-btn{
+    width:100%; padding:15px; font-size:16px; font-weight:600; border:none;
+    border-radius:12px; background:var(--safety,#e0562b); color:#fff; cursor:pointer;
+  }
+  .submit-btn:disabled{ opacity:.6; cursor:default; }
+  .success-note{
+    display:none; background:var(--success-bg); color:var(--success); border-radius:10px;
+    padding:12px 14px; font-size:14px; margin-bottom:14px; text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<div class="mobile-wrap">
+  <div class="mobile-top">
+    <div class="brand-mark">KAB</div>
+    <div>
+      <div class="name">Kunlik hisobot</div>
+      <div class="sub" id="todayLabel"></div>
+    </div>
+  </div>
+
+  <div class="success-note" id="successNote">Hisobot yuborildi. Rahmat!</div>
+
+  <form id="formReport">
+    <div class="m-field">
+      <label>Prorab</label>
+      <select id="selForeman" required></select>
+    </div>
+
+    <div class="m-field">
+      <label>Obyekt</label>
+      <select id="selObject" required></select>
+    </div>
+
+    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none;">
+    <div class="photo-box" id="photoBox">
+      <span id="photoBoxLabel">📷 Suratga olish</span>
+    </div>
+
+    <div class="m-field">
+      <label>Bajarilgan ish</label>
+      <textarea id="txtSummary" required placeholder="Masalan: 2-qavat devor suvoq ishlari yakunlandi"></textarea>
+    </div>
+
+    <div class="toggle-row">
+      <span>Muammo bormi?</span>
+      <div>
+        <button type="button" class="pill-btn active-no" id="btnNo">Yo'q</button>
+        <button type="button" class="pill-btn" id="btnYes">Ha</button>
+      </div>
+    </div>
+
+    <div id="problemBlock" style="display:none;">
+      <div class="m-field">
+        <label>Muammo / kechikish sababi</label>
+        <input type="text" id="txtProblem" placeholder="Muammoni qisqacha yozing">
+      </div>
+      <div class="toggle-row">
+        <span>Ustuvor yechim kerakmi?</span>
+        <div>
+          <button type="button" class="pill-btn active-no" id="btnUrgentNo">Yo'q</button>
+          <button type="button" class="pill-btn" id="btnUrgentYes">Ha</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="geo-note" id="geoNote">📍 Joylashuv aniqlanmoqda...</div>
+
+    <button type="submit" class="submit-btn" id="btnSubmit">Yuborish</button>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+document.getElementById("todayLabel").textContent = fmtDate(todayISO());
+
+const selForeman = document.getElementById("selForeman");
+const selObject = document.getElementById("selObject");
+const LAST_FOREMAN_KEY = "kab_lastForemanId";
+
+let hasProblem = false;
+let isUrgent = false;
+let photoFile = null;
+let geoCoords = null;
+
+function populateForemen(){
+  const foremen = getForemen();
+  fillSelect(selForeman, foremen, {value:"id", label:"name", placeholder:"Prorabni tanlang"});
+  const saved = localStorage.getItem(LAST_FOREMAN_KEY);
+  if(saved && foremen.some(f=>f.id===saved)) selForeman.value = saved;
+  populateObjects();
+}
+
+function populateObjects(){
+  const objects = getObjects();
+  const foremanId = selForeman.value;
+  const assigned = objects.filter(o=>o.foremanId===foremanId);
+  const list = assigned.length ? assigned : objects;
+  fillSelect(selObject, list, {value:"id", label:"name", placeholder:"Obyektni tanlang"});
+}
+
+function getForemen(){ return Store.get("foremen", []); }
+function getObjects(){ return Store.get("objects", []); }
+
+selForeman.addEventListener("change", ()=>{
+  localStorage.setItem(LAST_FOREMAN_KEY, selForeman.value);
+  populateObjects();
+});
+
+/* ---------- photo capture ---------- */
+const photoBox = document.getElementById("photoBox");
+const photoBoxLabel = document.getElementById("photoBoxLabel");
+const photoInput = document.getElementById("photoInput");
+
+photoBox.addEventListener("click", ()=>photoInput.click());
+photoInput.addEventListener("change", ()=>{
+  const file = photoInput.files[0];
+  if(!file) return;
+  photoFile = file;
+  const url = URL.createObjectURL(file);
+  photoBox.innerHTML = `<img src="${url}" alt="Obyekt surati">`;
+});
+
+/* ---------- problem toggle ---------- */
+const btnNo = document.getElementById("btnNo");
+const btnYes = document.getElementById("btnYes");
+const problemBlock = document.getElementById("problemBlock");
+
+btnNo.addEventListener("click", ()=>{
+  hasProblem = false;
+  btnNo.classList.add("active-no"); btnYes.classList.remove("active-yes");
+  problemBlock.style.display = "none";
+});
+btnYes.addEventListener("click", ()=>{
+  hasProblem = true;
+  btnYes.classList.add("active-yes"); btnNo.classList.remove("active-no");
+  problemBlock.style.display = "block";
+});
+
+const btnUrgentNo = document.getElementById("btnUrgentNo");
+const btnUrgentYes = document.getElementById("btnUrgentYes");
+btnUrgentNo.addEventListener("click", ()=>{
+  isUrgent = false;
+  btnUrgentNo.classList.add("active-no"); btnUrgentYes.classList.remove("active-yes");
+});
+btnUrgentYes.addEventListener("click", ()=>{
+  isUrgent = true;
+  btnUrgentYes.classList.add("active-yes"); btnUrgentNo.classList.remove("active-no");
+});
+
+/* ---------- geolocation (requested up front, non-blocking) ---------- */
+const geoNote = document.getElementById("geoNote");
+if(navigator.geolocation){
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      geoCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      geoNote.textContent = "📍 Joylashuv aniqlandi";
+    },
+    ()=>{ geoNote.textContent = "📍 Joylashuv aniqlanmadi (ruxsat berilmagan)"; },
+    { timeout: 8000 }
+  );
+} else {
+  geoNote.textContent = "📍 Bu qurilmada joylashuv qo'llab-quvvatlanmaydi";
+}
+
+/* ---------- submit ---------- */
+async function uploadPhoto(file){
+  const client = Store.client();
+  if(!client) return "";
+  const path = `${todayISO()}/${uid()}-${file.name}`.replace(/\s+/g, "_");
+  const { error } = await client.storage.from("hisobot-fotolar").upload(path, file);
+  if(error){ console.error("Surat yuklashda xato:", error); return ""; }
+  const { data } = client.storage.from("hisobot-fotolar").getPublicUrl(path);
+  return data ? data.publicUrl : "";
+}
+
+document.getElementById("formReport").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const btn = document.getElementById("btnSubmit");
+  const foremanId = selForeman.value;
+  const objectId = selObject.value;
+  const summary = document.getElementById("txtSummary").value.trim();
+  if(!foremanId || !objectId || !summary) return;
+
+  btn.disabled = true;
+  btn.textContent = "Yuborilmoqda...";
+
+  let photoUrl = "";
+  if(photoFile){
+    try{ photoUrl = await uploadPhoto(photoFile); }catch(e){ /* ignore, submit without photo */ }
+  }
+
+  Store.add("reports", {
+    id: uid(),
+    foremanId,
+    objectId,
+    date: todayISO(),
+    summary,
+    problem: hasProblem ? document.getElementById("txtProblem").value.trim() : "",
+    urgent: hasProblem && isUrgent ? "Ha" : "Yoʻq",
+    photoUrl,
+    lat: geoCoords ? geoCoords.lat : null,
+    lng: geoCoords ? geoCoords.lng : null
+  });
+
+  document.getElementById("successNote").style.display = "block";
+  e.target.reset();
+  photoFile = null;
+  photoBox.innerHTML = `<span id="photoBoxLabel">📷 Suratga olish</span>`;
+  hasProblem = false; isUrgent = false;
+  btnNo.classList.add("active-no"); btnYes.classList.remove("active-yes");
+  btnUrgentNo.classList.add("active-no"); btnUrgentYes.classList.remove("active-yes");
+  problemBlock.style.display = "none";
+  populateObjects();
+
+  btn.disabled = false;
+  btn.textContent = "Yuborish";
+  setTimeout(()=>{ document.getElementById("successNote").style.display = "none"; }, 4000);
+});
+
+Store.init(populateForemen).then(populateForemen);
+</script>
+</body>
+</html>

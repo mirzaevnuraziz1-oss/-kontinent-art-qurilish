@@ -285,7 +285,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Sana</th><th>Prorab</th><th>Obyekt</th><th class="wrap">Bajarilgan ish</th><th class="wrap">Muammo</th><th>Ustuvor</th><th></th></tr></thead>
+          <thead><tr><th>Sana</th><th>Prorab</th><th>Obyekt</th><th class="wrap">Bajarilgan ish</th><th class="wrap">Muammo</th><th>Ustuvor</th><th>Surat / Joylashuv</th><th></th></tr></thead>
           <tbody id="tblReports"></tbody>
         </table>
       </div>
@@ -700,8 +700,14 @@ function renderReports(){
       <td class="wrap">${escapeHtml(r.summary)}</td>
       <td class="wrap">${escapeHtml(r.problem||"—")}</td>
       <td>${r.urgent==="Ha" ? '<span class="badge danger">Ha</span>' : '<span class="badge neutral">Yo\'q</span>'}</td>
+      <td>${
+        (r.photoUrl ? `<a href="${r.photoUrl}" target="_blank" rel="noopener">Surat</a>` : "") +
+        (r.photoUrl && r.lat ? " · " : "") +
+        (r.lat && r.lng ? `<a href="https://www.google.com/maps?q=${r.lat},${r.lng}" target="_blank" rel="noopener">Xarita</a>` : "") ||
+        "—"
+      }</td>
       <td><button class="del-btn" data-store="reports" data-id="${r.id}">×</button></td>
-    </tr>`).join("") : `<tr><td colspan="7"><div class="empty-note">Hisobotlar yo'q</div></td></tr>`;
+    </tr>`).join("") : `<tr><td colspan="8"><div class="empty-note">Hisobotlar yo'q</div></td></tr>`;
 }
 
 /* ---------- OBJECTS + MATERIALS ---------- */
