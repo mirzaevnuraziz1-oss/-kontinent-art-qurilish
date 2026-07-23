@@ -19,6 +19,10 @@
       </div>
     </div>
     <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
+    <div class="global-search-wrap">
+      <input type="text" id="globalSearch" placeholder="Qidirish: xodim, obyekt, prorab..." autocomplete="off">
+      <div id="globalSearchResults" class="global-search-results"></div>
+    </div>
     <select id="roleSelect" class="role-select">
       <option value="Direktor">Direktor</option>
       <option value="Zam. direktor">Zam. direktor</option>
@@ -827,6 +831,73 @@ document.addEventListener("click", e=>{
   if(!ok) return;
   Store.remove(btn.dataset.store, btn.dataset.id);
   renderAll();
+});
+
+/* ---------- GLOBAL SEARCH ---------- */
+const gsInput = document.getElementById("globalSearch");
+const gsResults = document.getElementById("globalSearchResults");
+
+function goToSection(target){
+  document.querySelectorAll(".railnav button[data-target]").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.querySelector(`.railnav button[data-target="${target}"]`).classList.add("active");
+  document.getElementById(target).classList.add("active");
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+function renderGlobalSearch(){
+  const q = gsInput.value.trim().toLowerCase();
+  if(!q){ gsResults.classList.remove("open"); gsResults.innerHTML = ""; return; }
+
+  const emp = getEmployees().filter(e=>(e.name||"").toLowerCase().includes(q) || (e.position||"").toLowerCase().includes(q) || (e.phone||"").toLowerCase().includes(q)).slice(0,4);
+  const fore = getForemen().filter(f=>(f.name||"").toLowerCase().includes(q) || (f.phone||"").toLowerCase().includes(q)).slice(0,4);
+  const obj = getObjects().filter(o=>(o.name||"").toLowerCase().includes(q) || (o.address||"").toLowerCase().includes(q)).slice(0,4);
+
+  let html = "";
+  if(emp.length){
+    html += `<div class="gs-category">Xodimlar</div>`;
+    html += emp.map(e=>`<div class="gs-item" data-section="sec-employees" data-query="${escapeHtml(e.name)}"><span>${escapeHtml(e.name)}</span><span class="gs-meta">${escapeHtml(e.position||"")}</span></div>`).join("");
+  }
+  if(fore.length){
+    html += `<div class="gs-category">Prorablar</div>`;
+    html += fore.map(f=>`<div class="gs-item" data-section="sec-foremen"><span>${escapeHtml(f.name)}</span><span class="gs-meta">${escapeHtml(f.phone||"")}</span></div>`).join("");
+  }
+  if(obj.length){
+    html += `<div class="gs-category">Obyektlar</div>`;
+    html += obj.map(o=>`<div class="gs-item" data-section="sec-objects" data-query="${escapeHtml(o.name)}"><span>${escapeHtml(o.name)}</span><span class="gs-meta">${escapeHtml(o.address||"")}</span></div>`).join("");
+  }
+  if(!html) html = `<div class="gs-empty">Hech narsa topilmadi</div>`;
+
+  gsResults.innerHTML = html;
+  gsResults.classList.add("open");
+}
+
+gsInput.addEventListener("input", renderGlobalSearch);
+gsInput.addEventListener("focus", renderGlobalSearch);
+
+gsResults.addEventListener("click", e=>{
+  const item = e.target.closest(".gs-item");
+  if(!item) return;
+  goToSection(item.dataset.section);
+  const query = item.dataset.query;
+  if(query){
+    if(item.dataset.section === "sec-employees"){
+      document.getElementById("searchEmployees").value = query;
+      renderEmployees();
+    } else if(item.dataset.section === "sec-objects"){
+      document.getElementById("searchObjects").value = query;
+      renderObjects();
+    }
+  }
+  gsInput.value = "";
+  gsResults.classList.remove("open");
+});
+
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".global-search-wrap")) gsResults.classList.remove("open");
+});
+document.addEventListener("keydown", e=>{
+  if(e.key === "Escape") gsResults.classList.remove("open");
 });
 
 document.getElementById("btnTheme").addEventListener("click", toggleTheme);

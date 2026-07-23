@@ -295,6 +295,40 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:.01em;}
 }
 .card-pad{ padding:20px 22px; }
 
+.global-search-wrap{ position:relative; }
+.global-search-wrap input{
+  width:230px;
+  padding:8px 12px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);
+  border-radius:2px;
+  font-family:var(--font-body);
+  font-size:13px;
+  color:var(--ondark-text);
+}
+.global-search-wrap input::placeholder{ color:var(--ondark-muted); }
+.global-search-wrap input:focus{ outline:none; border-color:var(--safety); background:rgba(255,255,255,.1); }
+.global-search-results{
+  display:none;
+  position:absolute; top:calc(100% + 6px); left:0; width:320px;
+  background:var(--paper); color:var(--ink);
+  border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:0 18px 40px -20px rgba(0,0,0,.55);
+  z-index:60; max-height:340px; overflow-y:auto;
+}
+.global-search-results.open{ display:block; }
+.global-search-results .gs-category{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--steel); padding:10px 14px 4px;
+}
+.global-search-results .gs-item{
+  padding:8px 14px; cursor:pointer; font-size:13.5px;
+  display:flex; justify-content:space-between; gap:10px;
+}
+.global-search-results .gs-item:hover{ background:var(--concrete-2); }
+.global-search-results .gs-item .gs-meta{ color:var(--steel); font-size:12px; }
+.global-search-results .gs-empty{ padding:14px; color:var(--steel); font-size:13px; }
+
 .role-select{
   font-family:var(--font-mono);
   font-size:12px;
@@ -508,7 +542,7 @@ thead th[data-sort-idx]:hover{ color:var(--caution); }
 
 @media print{
   .topbar, .railnav, .form-card, .search-row, .table-toolbar select,
-  #btnBackup, #btnPrint, #btnTheme, #roleSelect, #btnExportEmployees, #btnExportPayments, #btnExportMaterials,
+  #btnBackup, #btnPrint, #btnTheme, #roleSelect, .global-search-wrap, #btnExportEmployees, #btnExportPayments, #btnExportMaterials,
   .home-link, .del-btn, .att-controls{ display:none !important; }
   .app-shell{ display:block !important; }
   .content{ padding:0 !important; }
