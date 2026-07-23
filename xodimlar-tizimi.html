@@ -807,9 +807,24 @@ document.getElementById("btnExportMaterials").addEventListener("click", ()=>{
   exportToExcel(rows, "material-xarajatlari.xlsx", "Materiallar");
 });
 
+const DELETE_LABELS = {
+  employees: "xodim", foremen: "prorab", objects: "obyekt",
+  payments: "to'lov yozuvi", workRecords: "ish yozuvi",
+  reports: "hisobot", materials: "xarajat yozuvi"
+};
+
+function deleteItemLabel(store, id){
+  const item = Store.get(store, []).find(i=>i.id===id);
+  if(!item) return DELETE_LABELS[store] || "yozuv";
+  return item.name || item.materialName || item.summary || DELETE_LABELS[store] || "yozuv";
+}
+
 document.addEventListener("click", e=>{
   const btn = e.target.closest(".del-btn");
   if(!btn) return;
+  const label = deleteItemLabel(btn.dataset.store, btn.dataset.id);
+  const ok = confirm(`"${label}" o'chirilsinmi? Bu amalni bekor qilib bo'lmaydi.`);
+  if(!ok) return;
   Store.remove(btn.dataset.store, btn.dataset.id);
   renderAll();
 });
