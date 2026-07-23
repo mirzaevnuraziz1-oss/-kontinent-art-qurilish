@@ -53,9 +53,9 @@
       <h1 class="page-title">Umumiy holat</h1>
       <p class="page-sub">Barcha bo'limlar bo'yicha so'nggi faoliyat bir qarashda.</p>
 
-      <div class="grid-4" style="margin-bottom:20px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px;">
         <div class="card card-pad stat-card">
-          <div class="stat-label">Jami xodimlar (jamoada)</div>
+          <div class="stat-label">Jamoa (xodim + prorab)</div>
           <div class="stat-num" id="statHeadcount">0</div>
         </div>
         <div class="card card-pad stat-card">
@@ -67,8 +67,23 @@
           <div class="stat-num" id="statPendingSum">0</div>
         </div>
         <div class="card card-pad stat-card">
+          <div class="stat-label">Muddati o'tgan to'lovlar</div>
+          <div class="stat-num" id="statOverdueSum" style="color:var(--danger);">0</div>
+        </div>
+        <div class="card card-pad stat-card">
           <div class="stat-label">Joriy oy — jarimalar summasi</div>
           <div class="stat-num" id="statFinesSum">0</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="card card-pad">
+          <div class="stat-label" style="margin-bottom:14px;">Obyektlar holati</div>
+          <canvas id="chartObjectStatus" height="160"></canvas>
+        </div>
+        <div class="card card-pad">
+          <div class="stat-label" style="margin-bottom:14px;">Reja va fakt (byudjetli obyektlar)</div>
+          <canvas id="chartPlanFact" height="160"></canvas>
         </div>
       </div>
 
@@ -432,6 +447,9 @@ function renderStats(){
   document.getElementById("statActiveObjects").textContent = objects.filter(o=>o.status==="jarayonda").length;
   const pendingSum = payments.filter(p=>p.status!=="Toʻlandi").reduce((s,p)=>s+(Number(p.amount)||0),0);
   document.getElementById("statPendingSum").textContent = fmtSum(pendingSum) + " so'm";
+  const today = todayISO();
+  const overdueSum = payments.filter(p=>p.status!=="Toʻlandi" && p.payDate && p.payDate < today).reduce((s,p)=>s+(Number(p.amount)||0),0);
+  document.getElementById("statOverdueSum").textContent = fmtSum(overdueSum) + " so'm";
   const finesSum = currentMonthFinesTotal();
   const finesEl = document.getElementById("statFinesSum");
   finesEl.textContent = fmtSum(finesSum) + " so'm";
@@ -440,6 +458,8 @@ function renderStats(){
 
 let objectSpendChart = null;
 let finesTrendChart = null;
+let objectStatusChart = null;
+let planFactChart = null;
 
 function monthsBack(n){
   const out = [];
@@ -475,6 +495,46 @@ function computeFinesForMonth(ym){
 function renderCharts(){
   if(typeof Chart === "undefined") return;
   const objects = getObjects(), materials = getMaterials();
+
+  const statusCounts = {jarayonda:0, tugallangan:0, toxtatilgan:0, kechikmoqda:0};
+  objects.forEach(o=>{ if(statusCounts[o.status] !== undefined) statusCounts[o.status]++; });
+  const statusColors = {jarayonda:"#1f6fb2", tugallangan:"#2f9e44", toxtatilgan:"#868e96", kechikmoqda:"#c43b3b"};
+  const ctx3 = document.getElementById("chartObjectStatus");
+  if(objectStatusChart) objectStatusChart.destroy();
+  const hasAnyObjects = objects.length > 0;
+  objectStatusChart = new Chart(ctx3, {
+    type: "doughnut",
+    data: {
+      labels: hasAnyObjects ? Object.keys(statusLabels).map(k=>statusLabels[k]) : ["Ma'lumot yo'q"],
+      datasets: [{
+        data: hasAnyObjects ? Object.keys(statusLabels).map(k=>statusCounts[k]) : [1],
+        backgroundColor: hasAnyObjects ? Object.keys(statusLabels).map(k=>statusColors[k]) : ["#ddd"]
+      }]
+    },
+    options: { plugins:{ legend:{ position:"bottom", labels:{ boxWidth:10, font:{size:11} } } } }
+  });
+
+  const budgeted = objects.filter(o=>Number(o.planBudget) > 0).map(o=>({
+    name: o.name,
+    plan: Number(o.planBudget)||0,
+    fact: materials.filter(m=>m.objectId===o.id).reduce((s,m)=>s+(m.qty*m.unitPrice),0)
+  })).slice(0,8);
+  const ctx4 = document.getElementById("chartPlanFact");
+  if(planFactChart) planFactChart.destroy();
+  planFactChart = new Chart(ctx4, {
+    type: "bar",
+    data: {
+      labels: budgeted.length ? budgeted.map(o=>o.name) : ["Ma'lumot yo'q"],
+      datasets: budgeted.length ? [
+        { label:"Reja", data: budgeted.map(o=>o.plan), backgroundColor:"#868e96" },
+        { label:"Fakt", data: budgeted.map(o=>o.fact), backgroundColor:"#e8590c" }
+      ] : [{ data:[0], backgroundColor:"#ddd" }]
+    },
+    options: {
+      plugins:{ legend:{ display: budgeted.length>0, position:"bottom" } },
+      scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>fmtSum(v) } } }
+    }
+  });
 
   const spendByObject = objects.map(o=>({
     name: o.name,
