@@ -246,6 +246,15 @@ document.getElementById("formReport").addEventListener("submit", async e=>{
     lng: geoCoords ? geoCoords.lng : null
   });
 
+  if(hasProblem && isUrgent){
+    const foreman = getForemen().find(f=>f.id===foremanId);
+    const object = getObjects().find(o=>o.id===objectId);
+    const problemText = document.getElementById("txtProblem").value.trim();
+    sendTelegramNotification(
+      `🚨 Ustuvor muammo — prorab hisobotida\nProrab: ${foreman?foreman.name:"—"}\nObyekt: ${object?object.name:"—"}\nMuammo: ${problemText||"—"}`
+    );
+  }
+
   document.getElementById("successNote").style.display = "block";
   e.target.reset();
   photoFile = null;

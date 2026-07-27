@@ -448,8 +448,20 @@ function renderStats(){
   const pendingSum = payments.filter(p=>p.status!=="Toʻlandi").reduce((s,p)=>s+(Number(p.amount)||0),0);
   document.getElementById("statPendingSum").textContent = fmtSum(pendingSum) + " so'm";
   const today = todayISO();
-  const overdueSum = payments.filter(p=>p.status!=="Toʻlandi" && p.payDate && p.payDate < today).reduce((s,p)=>s+(Number(p.amount)||0),0);
+  const overduePayments = payments.filter(p=>p.status!=="Toʻlandi" && p.payDate && p.payDate < today);
+  const overdueSum = overduePayments.reduce((s,p)=>s+(Number(p.amount)||0),0);
   document.getElementById("statOverdueSum").textContent = fmtSum(overdueSum) + " so'm";
+  const notifiedOverdue = Store.get("telegramOverdueNotified", []);
+  const newlyOverdue = overduePayments.filter(p=>!notifiedOverdue.includes(p.id));
+  if(newlyOverdue.length){
+    newlyOverdue.forEach(p=>{
+      const name = personNameByType(p.employeeId, p.personType);
+      sendTelegramNotification(
+        `⏰ To'lov muddati o'tdi\nF.I.Sh.: ${name}\nOy: ${monthLabel(p.month)}\nSumma: ${fmtSum(p.amount)} so'm\nRejalashtirilgan sana: ${fmtDate(p.payDate)}`
+      );
+    });
+    Store.set("telegramOverdueNotified", [...notifiedOverdue, ...newlyOverdue.map(p=>p.id)]);
+  }
   const finesSum = currentMonthFinesTotal();
   const finesEl = document.getElementById("statFinesSum");
   finesEl.textContent = fmtSum(finesSum) + " so'm";
