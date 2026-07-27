@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <script src="password-gate (1).js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Moliya boshqaruvi — KONTINENT ART BUSINESS</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark"><span>KAB</span></div>
+      <div class="brand-text">
+        <div class="name">Moliya boshqaruvi</div>
+        <div class="sub">Daromad, xarajat va foyda — Kontinent Art Business</div>
+      </div>
+    </div>
+    <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
+    <select id="roleSelect" class="role-select">
+      <option value="Direktor">Direktor</option>
+      <option value="Zam. direktor">Zam. direktor</option>
+    </select>
+    <button type="button" class="btn btn-ghost" id="btnTheme" style="padding:8px 14px;">🌙 Tungi</button>
+    <button type="button" class="btn btn-ghost" id="btnPrint" style="padding:8px 14px;">Chop etish</button>
+    <a class="home-link" href="index.html">Bosh sahifa</a>
+  </div>
+</header>
+
+<div class="app-shell">
+  <nav class="railnav">
+    <div class="legend-label">Bo'limlar</div>
+    <button class="active" data-target="sec-overview"><span class="num">01</span>Umumiy holat</button>
+    <button data-target="sec-byobject"><span class="num">02</span>Obyektlar bo'yicha</button>
+  </nav>
+
+  <main class="content">
+
+    <!-- 01 UMUMIY HOLAT -->
+    <section id="sec-overview" class="section active">
+      <h1 class="page-title">Moliyaviy umumiy holat</h1>
+      <p class="page-sub">Barcha obyektlar bo'yicha daromad (tender yoki reja byudjeti asosida), xarajat (material + ish haqi) va sof foyda.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px;">
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Jami kirim (kutilayotgan)</div>
+          <div class="stat-num" id="statRevenue">0</div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Jami xarajat</div>
+          <div class="stat-num" id="statExpense">0</div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Sof foyda</div>
+          <div class="stat-num" id="statProfit">0</div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Foyda darajasi</div>
+          <div class="stat-num" id="statMargin">—</div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Obyektga bog'lanmagan xarajat</div>
+          <div class="stat-num" id="statUnassigned" style="color:var(--steel);">0</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="card card-pad">
+          <div class="stat-label" style="margin-bottom:14px;">Xarajat turlari bo'yicha taqsimot</div>
+          <canvas id="chartExpenseBreakdown" height="180"></canvas>
+        </div>
+        <div class="card card-pad">
+          <div class="stat-label" style="margin-bottom:14px;">Oylik xarajat trendi (so'nggi 6 oy)</div>
+          <canvas id="chartExpenseTrend" height="180"></canvas>
+        </div>
+      </div>
+
+      <p style="font-size:12.5px;color:var(--steel);">
+        Izoh: "Kirim" — agar obyekt yutilgan tenderdan yaratilgan bo'lsa lot summasi, aks holda obyektning reja byudjeti (taxminiy) olinadi.
+        Ish haqi xarajati barcha yaratilgan to'lov yozuvlaridan (holatidan qat'i nazar) hisoblanadi — bu haqiqiy pul chiqimi emas, balki shu oy uchun hisoblangan majburiyat.
+      </p>
+    </section>
+
+    <!-- 02 OBYEKTLAR BO'YICHA -->
+    <section id="sec-byobject" class="section">
+      <h1 class="page-title">Obyektlar bo'yicha moliyaviy hisobot</h1>
+      <p class="page-sub">Har bir obyekt uchun kirim, xarajat va foyda/zarar.</p>
+
+      <div class="table-toolbar">
+        <div class="dim-heading" style="flex:1;margin-bottom:0;"><span class="dim-label">Obyektlar</span></div>
+        <button type="button" class="btn btn-ghost" id="btnExportFinance">Excel'ga yuklab olish</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="wrap">Obyekt</th><th>Kirim manbasi</th><th class="num">Kirim</th><th class="num">Material xarajati</th><th class="num">Ish haqi xarajati</th><th class="num">Jami xarajat</th><th class="num">Foyda / zarar</th><th class="num">Foyda %</th></tr></thead>
+          <tbody id="tblFinance"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="footer-note">KONTINENT ART BUSINESS — Moliya boshqaruvi · ma'lumotlar bulutda (Supabase) saqlanadi, boshqa tizimlar bilan bir xil ma'lumotlar bazasidan foydalanadi</div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="app.js"></script>
+<script>
+initNav();
+initRoleBadge();
+
+function getEmployees(){ return Store.get("employees", []); }
+function getForemen(){ return Store.get("foremen", []); }
+function getObjects(){ return Store.get("objects", []); }
+function getMaterials(){ return Store.get("materials", []); }
+function getPayments(){ return Store.get("payments", []); }
+function getTenders(){ return Store.get("tenders", []); }
+
+function exportToExcel(rows, filename, sheetName){
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName || "Sheet1");
+  XLSX.writeFile(wb, filename);
+}
+
+/* ---------- core finance calculation, shared by overview + object table ---------- */
+function computeFinance(){
+  const objects = getObjects();
+  const materials = getMaterials();
+  const payments = getPayments();
+  const employees = getEmployees();
+  const foremen = getForemen();
+  const tenders = getTenders();
+
+  const materialByObject = {};
+  materials.forEach(m=>{
+    if(!m.objectId) return;
+    materialByObject[m.objectId] = (materialByObject[m.objectId]||0) + (Number(m.qty)||0) * (Number(m.unitPrice)||0);
+  });
+
+  const salaryByObject = {};
+  let unassignedSalary = 0;
+  payments.forEach(p=>{
+    const amount = Number(p.amount)||0;
+    const personType = p.personType || "emp";
+    if(personType === "emp"){
+      const emp = employees.find(e=>e.id===p.employeeId);
+      if(emp && emp.objectId){ salaryByObject[emp.objectId] = (salaryByObject[emp.objectId]||0) + amount; }
+      else unassignedSalary += amount;
+    } else {
+      const fore = foremen.find(f=>f.id===p.employeeId);
+      const matched = fore ? objects.filter(o=>o.foremanId===fore.id) : [];
+      if(matched.length === 1){
+        salaryByObject[matched[0].id] = (salaryByObject[matched[0].id]||0) + amount;
+      } else if(matched.length > 1){
+        const share = amount / matched.length;
+        matched.forEach(o=>{ salaryByObject[o.id] = (salaryByObject[o.id]||0) + share; });
+      } else {
+        unassignedSalary += amount;
+      }
+    }
+  });
+
+  const revenueByObject = {};
+  tenders.forEach(t=>{
+    if(t.convertedObjectId) revenueByObject[t.convertedObjectId] = Number(t.lotSum)||0;
+  });
+
+  const rows = objects.map(o=>{
+    const fromTender = Object.prototype.hasOwnProperty.call(revenueByObject, o.id);
+    const revenue = fromTender ? revenueByObject[o.id] : (Number(o.planBudget)||0);
+    const materialCost = materialByObject[o.id] || 0;
+    const salaryCost = salaryByObject[o.id] || 0;
+    const totalCost = materialCost + salaryCost;
+    const profit = revenue - totalCost;
+    const margin = revenue > 0 ? (profit/revenue*100) : null;
+    return { object:o, fromTender, revenue, materialCost, salaryCost, totalCost, profit, margin };
+  });
+
+  const totalRevenue = rows.reduce((s,r)=>s+r.revenue, 0);
+  const totalExpense = rows.reduce((s,r)=>s+r.totalCost, 0) + unassignedSalary;
+  const totalProfit = totalRevenue - totalExpense;
+  const totalMaterial = rows.reduce((s,r)=>s+r.materialCost, 0);
+  const totalSalary = rows.reduce((s,r)=>s+r.salaryCost, 0) + unassignedSalary;
+
+  return { rows, unassignedSalary, totalRevenue, totalExpense, totalProfit, totalMaterial, totalSalary };
+}
+
+let expenseBreakdownChart = null;
+let expenseTrendChart = null;
+
+function renderOverview(){
+  const f = computeFinance();
+  document.getElementById("statRevenue").textContent = fmtSum(f.totalRevenue) + " so'm";
+  document.getElementById("statExpense").textContent = fmtSum(f.totalExpense) + " so'm";
+  const profitEl = document.getElementById("statProfit");
+  profitEl.textContent = fmtSum(f.totalProfit) + " so'm";
+  profitEl.style.color = f.totalProfit < 0 ? "var(--danger)" : "var(--success)";
+  document.getElementById("statMargin").textContent = f.totalRevenue > 0 ? (f.totalProfit/f.totalRevenue*100).toFixed(1) + "%" : "—";
+  document.getElementById("statUnassigned").textContent = fmtSum(f.unassignedSalary) + " so'm";
+
+  if(typeof Chart === "undefined") return;
+
+  const ctx1 = document.getElementById("chartExpenseBreakdown");
+  if(expenseBreakdownChart) expenseBreakdownChart.destroy();
+  const hasExpense = (f.totalMaterial + f.totalSalary) > 0;
+  expenseBreakdownChart = new Chart(ctx1, {
+    type: "doughnut",
+    data: {
+      labels: hasExpense ? ["Ish haqi", "Materiallar"] : ["Ma'lumot yo'q"],
+      datasets: [{
+        data: hasExpense ? [f.totalSalary, f.totalMaterial] : [1],
+        backgroundColor: hasExpense ? ["#1f6fb2", "#e8590c"] : ["#ddd"]
+      }]
+    },
+    options: { plugins:{ legend:{ position:"bottom" } } }
+  });
+
+  const materials = getMaterials();
+  const payments = getPayments();
+  const months = [];
+  const now = new Date();
+  for(let i=5; i>=0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
+  }
+  const expenseByMonth = months.map(ym=>{
+    const matSum = materials.filter(m=>(m.date||"").slice(0,7)===ym).reduce((s,m)=>s+(m.qty*m.unitPrice),0);
+    const paySum = payments.filter(p=>p.month===ym).reduce((s,p)=>s+(Number(p.amount)||0),0);
+    return matSum + paySum;
+  });
+  const ctx2 = document.getElementById("chartExpenseTrend");
+  if(expenseTrendChart) expenseTrendChart.destroy();
+  expenseTrendChart = new Chart(ctx2, {
+    type: "bar",
+    data: {
+      labels: months.map(monthLabel),
+      datasets: [{ label:"Xarajat", data: expenseByMonth, backgroundColor:"#c43b3b" }]
+    },
+    options: {
+      plugins:{ legend:{ display:false } },
+      scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>fmtSum(v) } } }
+    }
+  });
+}
+
+function renderByObject(){
+  const f = computeFinance();
+  document.getElementById("tblFinance").innerHTML = f.rows.length ? f.rows.map(r=>{
+    const profitColor = r.profit < 0 ? "var(--danger)" : "var(--success)";
+    return `<tr>
+      <td class="wrap">${escapeHtml(r.object.name)}</td>
+      <td>${r.fromTender ? '<span class="badge ok">Tender</span>' : '<span class="badge neutral">Reja byudjeti</span>'}</td>
+      <td class="num">${fmtSum(r.revenue)}</td>
+      <td class="num">${fmtSum(r.materialCost)}</td>
+      <td class="num">${fmtSum(r.salaryCost)}</td>
+      <td class="num">${fmtSum(r.totalCost)}</td>
+      <td class="num" style="color:${profitColor};">${fmtSum(r.profit)}</td>
+      <td class="num" style="color:${profitColor};">${r.margin===null ? "—" : r.margin.toFixed(1)+"%"}</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="8"><div class="empty-note">Obyekt kiritilmagan</div></td></tr>`;
+}
+
+function renderAll(){
+  renderOverview();
+  renderByObject();
+}
+
+document.getElementById("btnExportFinance").addEventListener("click", ()=>{
+  const f = computeFinance();
+  const rows = f.rows.map(r=>({
+    "Obyekt": r.object.name,
+    "Kirim manbasi": r.fromTender ? "Tender" : "Reja byudjeti",
+    "Kirim": r.revenue,
+    "Material xarajati": r.materialCost,
+    "Ish haqi xarajati": r.salaryCost,
+    "Jami xarajat": r.totalCost,
+    "Foyda/zarar": r.profit,
+    "Foyda %": r.margin===null ? "" : r.margin.toFixed(1)
+  }));
+  exportToExcel(rows, "moliya-hisoboti.xlsx", "Moliya");
+});
+
+document.getElementById("btnTheme").addEventListener("click", toggleTheme);
+updateThemeButtonLabel();
+document.getElementById("btnPrint").addEventListener("click", ()=>window.print());
+
+Store.init(renderAll).then(renderAll);
+</script>
+</body>
+</html>
