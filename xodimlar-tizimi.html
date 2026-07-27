@@ -45,6 +45,7 @@
     <button data-target="sec-reports"><span class="num">06</span>Prorab hisobotlari</button>
     <button data-target="sec-tenders"><span class="num">07</span>Tenderlar</button>
     <button data-target="sec-objects"><span class="num">08</span>Obyektlar</button>
+    <button data-target="sec-docs"><span class="num">09</span>Shartnomalar</button>
   </nav>
 
   <main class="content">
@@ -406,6 +407,43 @@
       </div>
     </section>
 
+    <!-- 09 SHARTNOMALAR VA LITSENZIYALAR -->
+    <section id="sec-docs" class="section">
+      <h1 class="page-title">Shartnomalar va litsenziyalar</h1>
+      <p class="page-sub">Litsenziya, SRO ruxsatnomasi, shartnoma va sertifikatlar — amal qilish muddati tugashidan oldin ogohlantiradi.</p>
+
+      <form id="formDoc" class="card form-card">
+        <h3>Yangi hujjat qo'shish</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label>Hujjat turi</label>
+            <select required name="docType">
+              <option value="litsenziya">Litsenziya</option>
+              <option value="sro">SRO ruxsatnomasi</option>
+              <option value="shartnoma">Shartnoma</option>
+              <option value="sertifikat">Sertifikat</option>
+              <option value="boshqa">Boshqa</option>
+            </select>
+          </div>
+          <div class="field span-2"><label>Nomi / tavsifi</label><input required name="name" placeholder="Masalan: Qurilish faoliyati litsenziyasi"></div>
+          <div class="field"><label>Tegishli obyekt</label><select name="objectId"></select></div>
+          <div class="field"><label>Berilgan sana</label><input type="date" name="issueDate"></div>
+          <div class="field"><label>Amal qilish muddati</label><input required type="date" name="expiryDate"></div>
+          <div class="field"><label>Fayl (skan/rasm)</label><input type="file" name="docFile" accept=".pdf,image/*"></div>
+          <div class="field span-2"><label>Eslatma</label><input name="note" placeholder="Ixtiyoriy"></div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Hujjatni qo'shish</button></div>
+      </form>
+
+      <div class="dim-heading"><span class="dim-label">Hujjatlar ro'yxati</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Turi</th><th class="wrap">Nomi</th><th>Obyekt</th><th>Amal qilish muddati</th><th>Holat</th><th>Fayl</th><th class="wrap">Eslatma</th><th></th></tr></thead>
+          <tbody id="tblDocs"></tbody>
+        </table>
+      </div>
+    </section>
+
     <div class="footer-note">KONTINENT ART BUSINESS — Xodimlar boshqaruv tizimi · ma'lumotlar bulutda (Supabase) saqlanadi, barcha qurilmalarda sinxron</div>
   </main>
 </div>
@@ -434,6 +472,7 @@ function getPayments(){ return Store.get("payments", []); }
 function getReports(){ return Store.get("reports", []); }
 function getMaterials(){ return Store.get("materials", []); }
 function getTenders(){ return Store.get("tenders", []); }
+function getDocs(){ return Store.get("docs", []); }
 
 function refreshSelects(){
   const employees = getEmployees(), foremen = getForemen(), objects = getObjects();
@@ -851,6 +890,49 @@ function renderTenders(){
   }).join("") : `<tr><td colspan="8"><div class="empty-note">Tenderlar kiritilmagan</div></td></tr>`;
 }
 
+function docStatus(expiryDate){
+  const days = Math.ceil((new Date(expiryDate) - new Date(todayISO())) / 86400000);
+  if(days < 0) return {label:"Muddati tugagan", cls:"danger", days};
+  if(days <= 30) return {label:`${days} kun qoldi`, cls:"pending", days};
+  return {label:"Amal qiladi", cls:"ok", days};
+}
+
+function renderDocs(){
+  const docs = getDocs();
+  const objects = getObjects();
+  const DOC_TYPE_LABELS = {litsenziya:"Litsenziya", sro:"SRO ruxsatnomasi", shartnoma:"Shartnoma", sertifikat:"Sertifikat", boshqa:"Boshqa"};
+
+  document.getElementById("tblDocs").innerHTML = docs.length ? docs.map(d=>{
+    const st = docStatus(d.expiryDate);
+    return `<tr>
+      <td>${DOC_TYPE_LABELS[d.docType]||d.docType}</td>
+      <td class="wrap">${escapeHtml(d.name)}</td>
+      <td>${d.objectId ? escapeHtml(nameById(objects,d.objectId)) : "Umumiy"}</td>
+      <td>${fmtDate(d.expiryDate)}</td>
+      <td><span class="badge ${st.cls}">${st.label}</span></td>
+      <td>${d.fileUrl ? `<a href="${d.fileUrl}" target="_blank" rel="noopener">Ochish</a>` : "—"}</td>
+      <td class="wrap">${escapeHtml(d.note||"—")}</td>
+      <td><button class="del-btn" data-store="docs" data-id="${d.id}">×</button></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="8"><div class="empty-note">Hujjat kiritilmagan</div></td></tr>`;
+
+  const notified = Store.get("telegramDocExpiryNotified", []);
+  const dueForNotice = docs.filter(d=>{
+    const st = docStatus(d.expiryDate);
+    return st.days <= 30 && !notified.includes(d.id);
+  });
+  if(dueForNotice.length){
+    dueForNotice.forEach(d=>{
+      const st = docStatus(d.expiryDate);
+      const msg = st.days < 0
+        ? `📄 Hujjat muddati tugagan\nNomi: ${d.name}\nAmal qilish muddati: ${fmtDate(d.expiryDate)}`
+        : `📄 Hujjat muddati yaqinlashmoqda (${st.days} kun qoldi)\nNomi: ${d.name}\nAmal qilish muddati: ${fmtDate(d.expiryDate)}`;
+      sendTelegramNotification(msg);
+    });
+    Store.set("telegramDocExpiryNotified", [...notified, ...dueForNotice.map(d=>d.id)]);
+  }
+}
+
 function renderObjects(){
   const allObjects = getObjects(), foremen = getForemen(), materials = getMaterials();
   const q = (document.getElementById("searchObjects").value||"").trim().toLowerCase();
@@ -917,6 +999,7 @@ function renderAll(){
   renderTenders();
   renderObjects();
   renderMaterials();
+  renderDocs();
 }
 
 /* ---------- form handlers ---------- */
@@ -953,6 +1036,41 @@ document.getElementById("formReport").addEventListener("submit", e=>{
   const f = new FormData(e.target);
   Store.add("reports", {id:uid(), foremanId:f.get("foremanId"), date:f.get("date"), objectId:f.get("objectId"), summary:f.get("summary"), problem:f.get("problem"), urgent:f.get("urgent")});
   e.target.reset(); renderAll();
+});
+
+document.getElementById("formDoc").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const form = e.target;
+  const f = new FormData(form);
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const file = form.querySelector('input[name="docFile"]').files[0];
+
+  let fileUrl = "";
+  if(file){
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Yuklanmoqda...";
+    try{
+      const client = Store.client();
+      if(client){
+        const path = `${todayISO()}/${uid()}-${file.name}`.replace(/\s+/g, "_");
+        const { error } = await client.storage.from("hujjatlar").upload(path, file);
+        if(!error){
+          const { data } = client.storage.from("hujjatlar").getPublicUrl(path);
+          fileUrl = data ? data.publicUrl : "";
+        } else {
+          console.error("Fayl yuklashda xato:", error);
+        }
+      }
+    }catch(err){ console.error(err); }
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Hujjatni qo'shish";
+  }
+
+  Store.add("docs", {
+    id: uid(), docType: f.get("docType"), name: f.get("name"), objectId: f.get("objectId"),
+    issueDate: f.get("issueDate"), expiryDate: f.get("expiryDate"), fileUrl, note: f.get("note")
+  });
+  form.reset(); renderAll();
 });
 
 document.getElementById("formTender").addEventListener("submit", e=>{
@@ -1083,7 +1201,7 @@ document.getElementById("btnExportMaterials").addEventListener("click", ()=>{
 const DELETE_LABELS = {
   employees: "xodim", foremen: "prorab", objects: "obyekt",
   payments: "to'lov yozuvi", workRecords: "ish yozuvi",
-  reports: "hisobot", materials: "xarajat yozuvi", tenders: "tender"
+  reports: "hisobot", materials: "xarajat yozuvi", tenders: "tender", docs: "hujjat"
 };
 
 function deleteItemLabel(store, id){
