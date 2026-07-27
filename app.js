@@ -247,11 +247,8 @@ const TELEGRAM_CHAT_ID = "487346580";
 async function sendTelegramNotification(text){
   if(!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === "BOT_TOKEN_BU_YERGA") return;
   try{
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text })
-    });
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${encodeURIComponent(TELEGRAM_CHAT_ID)}&text=${encodeURIComponent(text)}`;
+    await fetch(url, { mode: "no-cors" });
   }catch(e){ /* ignore — bildirishnoma yuborilmasa ham ish davom etadi */ }
 }
 
