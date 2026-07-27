@@ -233,6 +233,35 @@ document.addEventListener("click", e=>{
   if(next === "") delete rec[day]; else rec[day] = next;
   attendance[key] = rec;
   setAttendance(attendance);
+
+  if(next === "absent"){
+    const days = Object.keys(rec).map(Number).sort((a,b)=>a-b);
+    let runStart = null, runLen = 0;
+    for(let i=0; i<=days.length; i++){
+      const d = days[i];
+      if(d !== undefined && rec[d] === "absent" && (runLen===0 || d === days[i-1]+1)){
+        if(runLen===0) runStart = d;
+        runLen++;
+      } else {
+        if(runLen >= 3){
+          const notifiedKey = `${key}:${runStart}`;
+          const notified = Store.get("telegramAbsenceNotified", []);
+          if(!notified.includes(notifiedKey)){
+            const [storeKey, personId] = key.split(":");
+            const list = storeKey === "emp" ? getEmployees() : getForemen();
+            const person = list.find(p=>p.id===personId);
+            sendTelegramNotification(
+              `🔴 ${storeKey==="emp"?"Xodim":"Prorab"} ${runLen} kun ketma-ket kelmadi\nIsm: ${person?person.name:"—"}\nKunlar: ${runStart}-${runStart+runLen-1} (${monthLabel(monthPicker.value)})`
+            );
+            Store.set("telegramAbsenceNotified", [...notified, notifiedKey]);
+          }
+        }
+        runLen = (d !== undefined && rec[d] === "absent") ? 1 : 0;
+        runStart = runLen ? d : null;
+      }
+    }
+  }
+
   renderAll();
 });
 
