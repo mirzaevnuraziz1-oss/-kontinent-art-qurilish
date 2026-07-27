@@ -234,6 +234,27 @@ function initRoleBadge(){
   });
 }
 
+/* ==========================================================================
+   Telegram notifications. Fill in your bot token and chat id below — see
+   the setup instructions you were given (BotFather + getUpdates).
+   NOTE: this token is visible in the page source to anyone who opens
+   dev tools, same tradeoff as the site password — fine for an internal
+   notify-only bot, just don't reuse this token for anything sensitive.
+   ========================================================================== */
+const TELEGRAM_BOT_TOKEN = "8505892508:AAGPurkNFJnEWKx73PRnZ1OBQQXCGu1Z1aA";
+const TELEGRAM_CHAT_ID = "487346580";
+
+async function sendTelegramNotification(text){
+  if(!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === "BOT_TOKEN_BU_YERGA") return;
+  try{
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text })
+    });
+  }catch(e){ /* ignore — bildirishnoma yuborilmasa ham ish davom etadi */ }
+}
+
 function nameById(list, id){
   const found = list.find(i=>i.id===id);
   return found ? (found.name || found.fullName) : "—";
