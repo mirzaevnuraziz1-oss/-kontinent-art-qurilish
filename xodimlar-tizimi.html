@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
 <title>Xodimlar boshqaruv tizimi — KONTINENT ART BUSINESS</title>
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
 
@@ -45,7 +44,6 @@
     <button data-target="sec-foremen"><span class="num">05</span>Prorablar</button>
     <button data-target="sec-reports"><span class="num">06</span>Prorab hisobotlari</button>
     <button data-target="sec-objects"><span class="num">07</span>Obyektlar</button>
-    <button data-target="sec-map"><span class="num">08</span>Xarita</button>
   </nav>
 
   <main class="content">
@@ -55,9 +53,9 @@
       <h1 class="page-title">Umumiy holat</h1>
       <p class="page-sub">Barcha bo'limlar bo'yicha so'nggi faoliyat bir qarashda.</p>
 
-      <div class="grid-4" style="margin-bottom:20px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px;">
         <div class="card card-pad stat-card">
-          <div class="stat-label">Jami xodimlar (jamoada)</div>
+          <div class="stat-label">Jamoa (xodim + prorab)</div>
           <div class="stat-num" id="statHeadcount">0</div>
         </div>
         <div class="card card-pad stat-card">
@@ -69,8 +67,23 @@
           <div class="stat-num" id="statPendingSum">0</div>
         </div>
         <div class="card card-pad stat-card">
+          <div class="stat-label">Muddati o'tgan to'lovlar</div>
+          <div class="stat-num" id="statOverdueSum" style="color:var(--danger);">0</div>
+        </div>
+        <div class="card card-pad stat-card">
           <div class="stat-label">Joriy oy — jarimalar summasi</div>
           <div class="stat-num" id="statFinesSum">0</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="card card-pad">
+          <div class="stat-label" style="margin-bottom:14px;">Obyektlar holati</div>
+          <canvas id="chartObjectStatus" height="160"></canvas>
+        </div>
+        <div class="card card-pad">
+          <div class="stat-label" style="margin-bottom:14px;">Reja va fakt (byudjetli obyektlar)</div>
+          <canvas id="chartPlanFact" height="160"></canvas>
         </div>
       </div>
 
@@ -138,9 +151,6 @@
       <div class="search-row" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <input type="text" id="searchEmployees" placeholder="F.I.Sh., lavozim yoki telefon bo'yicha qidirish...">
         <button type="button" class="btn btn-ghost" id="btnExportEmployees">Excel'ga yuklab olish</button>
-        <button type="button" class="btn btn-ghost" id="btnImportEmployees">Excel'dan yuklash</button>
-        <button type="button" class="btn btn-ghost" id="btnTemplateEmployees">Namuna fayl</button>
-        <input type="file" id="importEmployeesFile" accept=".xlsx,.xls,.csv" style="display:none;">
       </div>
       <div class="dim-heading"><span class="dim-label">Xodimlar ro'yxati</span><span class="dim-num" id="countEmployees">0</span></div>
       <div class="table-wrap">
@@ -188,8 +198,22 @@
       <h1 class="page-title">Oyliklar</h1>
       <p class="page-sub">To'lov yozuvlarini kiritish va to'lovlar tarixi.</p>
 
+      <div class="card card-pad" style="margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+          <h3 style="margin:0;">Oylik hisob-kitobi (avtomatik, davomat asosida)</h3>
+          <div class="field" style="margin:0;"><input type="month" id="payrollMonth"></div>
+        </div>
+        <p class="page-sub" style="margin-top:-6px;">Har bir xodim/prorab uchun oklad, "Davomat va baholash" bo'limidagi belgilar va joriy oy normasi asosida hisoblangan yakuniy summa. "To'lov yaratish" bosilganda tayyor to'lov yozuvi pastdagi jadvalga (holati: Kutilmoqda) qo'shiladi.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>F.I.Sh.</th><th>Turi</th><th class="num">Oylik maosh</th><th class="num">Ishlagan/Norma</th><th class="num">Jarima</th><th class="num">Hisoblangan summa</th><th></th></tr></thead>
+            <tbody id="tblPayrollCalc"></tbody>
+          </table>
+        </div>
+      </div>
+
       <form id="formPayment" class="card form-card">
-        <h3>To'lov yozuvi qo'shish</h3>
+        <h3>To'lov yozuvi qo'shish (qo'lda)</h3>
         <div class="form-grid">
           <div class="field"><label>Xodim</label><select required name="employeeId"></select></div>
           <div class="field"><label>Oy</label><input required type="month" name="month"></div>
@@ -214,7 +238,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Xodim</th><th>Oy</th><th class="num">Summa</th><th>To'lov sanasi</th><th>Holat</th><th></th></tr></thead>
+          <thead><tr><th>F.I.Sh.</th><th>Oy</th><th class="num">Summa</th><th>To'lov sanasi</th><th>Holat</th><th></th></tr></thead>
           <tbody id="tblPayments"></tbody>
         </table>
       </div>
@@ -232,6 +256,7 @@
           <div class="field"><label>Telefon</label><input name="phone" placeholder="+998 -- --- -- --"></div>
           <div class="field"><label>Biriktirilgan obyekt(lar)</label><input name="objects" placeholder="Masalan: Obyekt-1, Obyekt-2"></div>
           <div class="field"><label>Ish boshlagan sana</label><input required type="date" name="startDate"></div>
+          <div class="field"><label>Oylik maosh (so'm)</label><input required type="number" min="0" name="salary" placeholder="0"></div>
         </div>
         <div class="form-actions"><button type="submit" class="btn">Prorabni qo'shish</button></div>
       </form>
@@ -239,7 +264,7 @@
       <div class="dim-heading"><span class="dim-label">Prorablar ro'yxati</span><span class="dim-num" id="countForemen">0</span></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>F.I.Sh.</th><th>Telefon</th><th class="wrap">Biriktirilgan obyekt(lar)</th><th>Boshlagan sana</th><th></th></tr></thead>
+          <thead><tr><th>F.I.Sh.</th><th>Telefon</th><th class="wrap">Biriktirilgan obyekt(lar)</th><th>Boshlagan sana</th><th class="num">Oylik maosh</th><th></th></tr></thead>
           <tbody id="tblForemen"></tbody>
         </table>
       </div>
@@ -275,7 +300,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Sana</th><th>Prorab</th><th>Obyekt</th><th class="wrap">Bajarilgan ish</th><th class="wrap">Muammo</th><th>Ustuvor</th><th></th></tr></thead>
+          <thead><tr><th>Sana</th><th>Prorab</th><th>Obyekt</th><th class="wrap">Bajarilgan ish</th><th class="wrap">Muammo</th><th>Ustuvor</th><th>Surat / Joylashuv</th><th></th></tr></thead>
           <tbody id="tblReports"></tbody>
         </table>
       </div>
@@ -345,16 +370,6 @@
       </div>
     </section>
 
-    <!-- 08 XARITA -->
-    <section id="sec-map" class="section">
-      <h1 class="page-title">Obyektlar xaritasi</h1>
-      <p class="page-sub">Barcha obyektlar manzillari bo'yicha xaritada. Manzil topilmasa, belgi qo'yilmaydi.</p>
-      <div class="card card-pad" style="margin-bottom:16px;">
-        <div id="mapStatus" style="font-size:13px;color:var(--steel);margin-bottom:10px;"></div>
-        <div id="objectsMap" style="height:520px;border-radius:2px;overflow:hidden;"></div>
-      </div>
-    </section>
-
     <div class="footer-note">KONTINENT ART BUSINESS — Xodimlar boshqaruv tizimi · ma'lumotlar bulutda (Supabase) saqlanadi, barcha qurilmalarda sinxron</div>
   </main>
 </div>
@@ -362,11 +377,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>
 <script>
 initNav();
 initRoleBadge();
+document.getElementById("payrollMonth").value = currentMonthKey();
 
 function exportToExcel(rows, filename, sheetName){
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -397,103 +412,10 @@ function refreshSelects(){
   });
 
   fillSelect(document.getElementById("filterWork"), employees, {value:"id", label:"name", includeAll:true});
-  fillSelect(document.getElementById("filterPayments"), employees, {value:"id", label:"name", includeAll:true});
+  fillSelect(document.getElementById("filterPayments"), [...employees, ...foremen], {value:"id", label:"name", includeAll:true});
   fillSelect(document.getElementById("filterReports"), foremen, {value:"id", label:"name", includeAll:true});
   fillSelect(document.getElementById("filterMaterials"), objects, {value:"id", label:"name", includeAll:true});
 }
-
-/* ---------- OBJECTS MAP ---------- */
-let objectsMapInstance = null;
-let objectsMarkersLayer = null;
-let geocodeQueueRunning = false;
-
-function getGeocodeCache(){ return Store.get("geocodeCache", {}); }
-function setGeocodeCache(cache){ Store.set("geocodeCache", cache); }
-
-async function geocodeAddress(address){
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address + ", Uzbekiston")}`;
-  try{
-    const res = await fetch(url);
-    const data = await res.json();
-    if(data && data[0]) return { lat: Number(data[0].lat), lon: Number(data[0].lon) };
-  }catch(e){ /* offline yoki xato — belgisiz qoldiramiz */ }
-  return null;
-}
-
-function initObjectsMap(){
-  if(objectsMapInstance) return;
-  objectsMapInstance = L.map("objectsMap").setView([41.3111, 69.2797], 6); // Toshkent markazida boshlanadi
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 18
-  }).addTo(objectsMapInstance);
-  objectsMarkersLayer = L.layerGroup().addTo(objectsMapInstance);
-}
-
-async function renderObjectsMap(){
-  if(typeof L === "undefined") return;
-  initObjectsMap();
-  setTimeout(()=>objectsMapInstance.invalidateSize(), 50);
-
-  const objects = getObjects();
-  const foremen = getForemen();
-  const materials = getMaterials();
-  const cache = getGeocodeCache();
-  const statusEl = document.getElementById("mapStatus");
-  objectsMarkersLayer.clearLayers();
-
-  const bounds = [];
-  let shown = 0, unresolved = [];
-
-  objects.forEach(o=>{
-    if(!o.address) return;
-    const key = o.address.trim().toLowerCase();
-    const coord = cache[key];
-    if(coord){
-      const spent = materials.filter(m=>m.objectId===o.id).reduce((s,m)=>s+(m.qty*m.unitPrice),0);
-      const marker = L.circleMarker([coord.lat, coord.lon], {
-        radius: 9, color: "#e8590c", weight: 2, fillColor: "#e8590c", fillOpacity: .55
-      }).addTo(objectsMarkersLayer);
-      marker.bindPopup(`
-        <b>${escapeHtml(o.name)}</b><br>
-        ${escapeHtml(o.address)}<br>
-        ${statusLabels[o.status]||o.status}<br>
-        Mas'ul: ${escapeHtml(nameById(foremen,o.foremanId))}<br>
-        Xarajat: ${fmtSum(spent)} so'm
-      `);
-      bounds.push([coord.lat, coord.lon]);
-      shown++;
-    } else {
-      unresolved.push(key);
-    }
-  });
-
-  if(bounds.length) objectsMapInstance.fitBounds(bounds, {padding:[30,30], maxZoom:13});
-
-  statusEl.textContent = unresolved.length
-    ? `${shown} ta obyekt xaritada ko'rsatildi. ${unresolved.length} ta manzil aniqlanmoqda...`
-    : `${shown} ta obyekt xaritada ko'rsatildi.`;
-
-  if(unresolved.length && !geocodeQueueRunning){
-    geocodeQueueRunning = true;
-    const uniqueUnresolved = [...new Set(unresolved)];
-    for(const key of uniqueUnresolved){
-      const original = objects.find(o=>o.address && o.address.trim().toLowerCase()===key);
-      if(!original) continue;
-      const coord = await geocodeAddress(original.address);
-      if(coord){
-        const c = getGeocodeCache();
-        c[key] = coord;
-        setGeocodeCache(c);
-      }
-      await new Promise(r=>setTimeout(r, 1100)); // Nominatim: 1 so'rov/soniyadan oshmasin
-    }
-    geocodeQueueRunning = false;
-    renderObjectsMap();
-  }
-}
-
-document.querySelector('.railnav button[data-target="sec-map"]').addEventListener("click", renderObjectsMap);
 
 /* ---------- OVERVIEW ---------- */
 function currentMonthFinesTotal(){
@@ -525,6 +447,9 @@ function renderStats(){
   document.getElementById("statActiveObjects").textContent = objects.filter(o=>o.status==="jarayonda").length;
   const pendingSum = payments.filter(p=>p.status!=="Toʻlandi").reduce((s,p)=>s+(Number(p.amount)||0),0);
   document.getElementById("statPendingSum").textContent = fmtSum(pendingSum) + " so'm";
+  const today = todayISO();
+  const overdueSum = payments.filter(p=>p.status!=="Toʻlandi" && p.payDate && p.payDate < today).reduce((s,p)=>s+(Number(p.amount)||0),0);
+  document.getElementById("statOverdueSum").textContent = fmtSum(overdueSum) + " so'm";
   const finesSum = currentMonthFinesTotal();
   const finesEl = document.getElementById("statFinesSum");
   finesEl.textContent = fmtSum(finesSum) + " so'm";
@@ -533,6 +458,8 @@ function renderStats(){
 
 let objectSpendChart = null;
 let finesTrendChart = null;
+let objectStatusChart = null;
+let planFactChart = null;
 
 function monthsBack(n){
   const out = [];
@@ -568,6 +495,46 @@ function computeFinesForMonth(ym){
 function renderCharts(){
   if(typeof Chart === "undefined") return;
   const objects = getObjects(), materials = getMaterials();
+
+  const statusCounts = {jarayonda:0, tugallangan:0, toxtatilgan:0, kechikmoqda:0};
+  objects.forEach(o=>{ if(statusCounts[o.status] !== undefined) statusCounts[o.status]++; });
+  const statusColors = {jarayonda:"#1f6fb2", tugallangan:"#2f9e44", toxtatilgan:"#868e96", kechikmoqda:"#c43b3b"};
+  const ctx3 = document.getElementById("chartObjectStatus");
+  if(objectStatusChart) objectStatusChart.destroy();
+  const hasAnyObjects = objects.length > 0;
+  objectStatusChart = new Chart(ctx3, {
+    type: "doughnut",
+    data: {
+      labels: hasAnyObjects ? Object.keys(statusLabels).map(k=>statusLabels[k]) : ["Ma'lumot yo'q"],
+      datasets: [{
+        data: hasAnyObjects ? Object.keys(statusLabels).map(k=>statusCounts[k]) : [1],
+        backgroundColor: hasAnyObjects ? Object.keys(statusLabels).map(k=>statusColors[k]) : ["#ddd"]
+      }]
+    },
+    options: { plugins:{ legend:{ position:"bottom", labels:{ boxWidth:10, font:{size:11} } } } }
+  });
+
+  const budgeted = objects.filter(o=>Number(o.planBudget) > 0).map(o=>({
+    name: o.name,
+    plan: Number(o.planBudget)||0,
+    fact: materials.filter(m=>m.objectId===o.id).reduce((s,m)=>s+(m.qty*m.unitPrice),0)
+  })).slice(0,8);
+  const ctx4 = document.getElementById("chartPlanFact");
+  if(planFactChart) planFactChart.destroy();
+  planFactChart = new Chart(ctx4, {
+    type: "bar",
+    data: {
+      labels: budgeted.length ? budgeted.map(o=>o.name) : ["Ma'lumot yo'q"],
+      datasets: budgeted.length ? [
+        { label:"Reja", data: budgeted.map(o=>o.plan), backgroundColor:"#868e96" },
+        { label:"Fakt", data: budgeted.map(o=>o.fact), backgroundColor:"#e8590c" }
+      ] : [{ data:[0], backgroundColor:"#ddd" }]
+    },
+    options: {
+      plugins:{ legend:{ display: budgeted.length>0, position:"bottom" } },
+      scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>fmtSum(v) } } }
+    }
+  });
 
   const spendByObject = objects.map(o=>({
     name: o.name,
@@ -621,7 +588,7 @@ function renderOverview(){
   const pending = getPayments().filter(p=>p.status!=="Toʻlandi").slice(0,6);
   document.getElementById("feedPayments").innerHTML = pending.length ? pending.map(p=>`
     <div class="feed-item">
-      <div class="top-row"><span class="title">${escapeHtml(nameById(employees,p.employeeId))}</span><span class="badge ${p.status==='Kechikkan'?'danger':'pending'}">${p.status}</span></div>
+      <div class="top-row"><span class="title">${escapeHtml(personNameByType(p.employeeId, p.personType))}</span><span class="badge ${p.status==='Kechikkan'?'danger':'pending'}">${p.status}</span></div>
       <span class="meta">${monthLabel(p.month)} · ${fmtSum(p.amount)} so'm</span>
     </div>`).join("") : `<div class="empty-note">Kutilayotgan to'lovlar yo'q</div>`;
 
@@ -690,14 +657,71 @@ function renderWork(){
 }
 
 /* ---------- PAYMENTS ---------- */
+function personNameByType(id, personType){
+  const list = personType === "fore" ? getForemen() : getEmployees();
+  return nameById(list, id);
+}
+
+/* Compute attendance-based pay for one person in one month.
+   storeKey is "emp" or "fore" — matches the attendance-key prefix used on
+   the Davomat va baholash page, so both pages read the exact same numbers. */
+function computeFinalPay(person, ym, storeKey){
+  const attendance = Store.get("attendance", {});
+  const norms = Store.get("monthNorms", {});
+  const norm = norms[ym] || 26;
+  const key = `${storeKey}:${person.id}:${ym}`;
+  const rec = attendance[key] || {};
+  const salary = Number(person.salary) || 0;
+  const dayRate = norm ? salary / norm : 0;
+  let workedDays = 0, fine = 0;
+  Object.values(rec).forEach(state=>{
+    if(state==="present") workedDays += 1;
+    if(state==="late"){ workedDays += 1; fine += dayRate*0.5; }
+    if(state==="absent"){ fine += dayRate; }
+  });
+  const finalPay = Math.max(salary - fine, 0);
+  return { norm, workedDays, fine: Math.round(fine), finalPay: Math.round(finalPay) };
+}
+
+function renderPayrollCalc(){
+  const monthInput = document.getElementById("payrollMonth");
+  const ym = monthInput.value || currentMonthKey();
+  const payments = getPayments();
+
+  function alreadyGenerated(personId, personType){
+    return payments.some(p => p.employeeId===personId && p.month===ym && (p.personType||"emp")===personType);
+  }
+
+  function rowsFor(list, storeKey, typeLabel, personType){
+    if(!list.length) return "";
+    return list.map(p=>{
+      const {norm, workedDays, fine, finalPay} = computeFinalPay(p, ym, storeKey);
+      const done = alreadyGenerated(p.id, personType);
+      return `<tr>
+        <td>${escapeHtml(p.name)}</td>
+        <td>${typeLabel}</td>
+        <td class="num">${fmtSum(p.salary)}</td>
+        <td class="num">${workedDays}/${norm}</td>
+        <td class="num" style="color:${fine>0?'var(--danger)':'inherit'};">${fmtSum(fine)}</td>
+        <td class="num">${fmtSum(finalPay)}</td>
+        <td>${done
+          ? `<span class="badge ok">Yaratilgan</span>`
+          : `<button type="button" class="btn btn-ghost btn-generate-payment" data-person-id="${p.id}" data-person-type="${personType}" data-month="${ym}" data-amount="${finalPay}">To'lov yaratish</button>`}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  const body = rowsFor(getEmployees(), "emp", "Xodim", "emp") + rowsFor(getForemen(), "fore", "Prorab", "fore");
+  document.getElementById("tblPayrollCalc").innerHTML = body || `<tr><td colspan="7"><div class="empty-note">Xodim yoki prorab qo'shilmagan</div></td></tr>`;
+}
+
 function renderPayments(){
-  const employees = getEmployees();
   const filterVal = document.getElementById("filterPayments").value;
   const list = getPayments().filter(p=>!filterVal || p.employeeId===filterVal);
   document.getElementById("tblPayments").innerHTML = list.length ? list.map(p=>{
     const cls = p.status==="Toʻlandi" ? "ok" : p.status==="Kechikkan" ? "danger" : "pending";
     return `<tr>
-      <td>${escapeHtml(nameById(employees,p.employeeId))}</td>
+      <td>${escapeHtml(personNameByType(p.employeeId, p.personType))}</td>
       <td>${monthLabel(p.month)}</td>
       <td class="num">${fmtSum(p.amount)}</td>
       <td>${fmtDate(p.payDate)}</td>
@@ -705,6 +729,7 @@ function renderPayments(){
       <td><button class="del-btn" data-store="payments" data-id="${p.id}">×</button></td>
     </tr>`;
   }).join("") : `<tr><td colspan="6"><div class="empty-note">To'lovlar yo'q</div></td></tr>`;
+  renderPayrollCalc();
 }
 
 /* ---------- FOREMEN ---------- */
@@ -717,8 +742,9 @@ function renderForemen(){
       <td class="mono">${escapeHtml(f.phone||"—")}</td>
       <td class="wrap">${escapeHtml(f.objects||"—")}</td>
       <td>${fmtDate(f.startDate)}</td>
+      <td class="num">${fmtSum(f.salary)}</td>
       <td><button class="del-btn" data-store="foremen" data-id="${f.id}">×</button></td>
-    </tr>`).join("") : `<tr><td colspan="5"><div class="empty-note">Prorab qo'shilmagan</div></td></tr>`;
+    </tr>`).join("") : `<tr><td colspan="6"><div class="empty-note">Prorab qo'shilmagan</div></td></tr>`;
 }
 
 /* ---------- REPORTS ---------- */
@@ -734,8 +760,14 @@ function renderReports(){
       <td class="wrap">${escapeHtml(r.summary)}</td>
       <td class="wrap">${escapeHtml(r.problem||"—")}</td>
       <td>${r.urgent==="Ha" ? '<span class="badge danger">Ha</span>' : '<span class="badge neutral">Yo\'q</span>'}</td>
+      <td>${
+        (r.photoUrl ? `<a href="${r.photoUrl}" target="_blank" rel="noopener">Surat</a>` : "") +
+        (r.photoUrl && r.lat ? " · " : "") +
+        (r.lat && r.lng ? `<a href="https://www.google.com/maps?q=${r.lat},${r.lng}" target="_blank" rel="noopener">Xarita</a>` : "") ||
+        "—"
+      }</td>
       <td><button class="del-btn" data-store="reports" data-id="${r.id}">×</button></td>
-    </tr>`).join("") : `<tr><td colspan="7"><div class="empty-note">Hisobotlar yo'q</div></td></tr>`;
+    </tr>`).join("") : `<tr><td colspan="8"><div class="empty-note">Hisobotlar yo'q</div></td></tr>`;
 }
 
 /* ---------- OBJECTS + MATERIALS ---------- */
@@ -759,13 +791,6 @@ function renderObjects(){
       const daysLeft = Math.ceil((new Date(o.planEndDate) - new Date(todayISO())) / 86400000);
       if(daysLeft < 0) deadlineNote = `<div class="badge danger" style="margin-top:8px;">Muddat o'tib ketgan (${Math.abs(daysLeft)} kun)</div>`;
       else if(daysLeft <= 14) deadlineNote = `<div class="badge pending" style="margin-top:8px;">Muddatga ${daysLeft} kun qoldi</div>`;
-      if(daysLeft >= 0 && daysLeft <= 3){
-        const notified = Store.get("telegramDeadlineNotified", []);
-        if(!notified.includes(o.id)){
-          sendTelegramNotification(`⏰ MUDDAT YAQINLASHMOQDA\nObyekt: ${o.name}\nTugash sanasi: ${fmtDate(o.planEndDate)} (${daysLeft} kun qoldi)`);
-          Store.set("telegramDeadlineNotified", [...notified, o.id]);
-        }
-      }
     }
     const budgetLine = plan > 0
       ? `<div class="obj-meta"><span>Reja: ${fmtSum(plan)} so'm</span><span style="color:${overBudget?'var(--danger)':'inherit'};">Fakt: ${fmtSum(spent)} so'm${overBudget?' ⚠':''}</span></div>`
@@ -840,22 +865,14 @@ document.getElementById("formPayment").addEventListener("submit", e=>{
 document.getElementById("formForeman").addEventListener("submit", e=>{
   e.preventDefault();
   const f = new FormData(e.target);
-  Store.add("foremen", {id:uid(), name:f.get("name"), phone:f.get("phone"), objects:f.get("objects"), startDate:f.get("startDate")});
+  Store.add("foremen", {id:uid(), name:f.get("name"), phone:f.get("phone"), objects:f.get("objects"), startDate:f.get("startDate"), salary:Number(f.get("salary"))});
   e.target.reset(); renderAll();
 });
 
 document.getElementById("formReport").addEventListener("submit", e=>{
   e.preventDefault();
   const f = new FormData(e.target);
-  const foremanId = f.get("foremanId"), objectId = f.get("objectId"), urgent = f.get("urgent");
-  Store.add("reports", {id:uid(), foremanId, date:f.get("date"), objectId, summary:f.get("summary"), problem:f.get("problem"), urgent});
-  if(urgent === "Ha"){
-    const foreman = getForemen().find(x=>x.id===foremanId);
-    const obj = getObjects().find(x=>x.id===objectId);
-    sendTelegramNotification(
-      `⚠️ USTUVOR MUAMMO — hisobot\nProrab: ${foreman?foreman.name:"—"}\nObyekt: ${obj?obj.name:"—"}\nMuammo: ${f.get("problem")||"—"}`
-    );
-  }
+  Store.add("reports", {id:uid(), foremanId:f.get("foremanId"), date:f.get("date"), objectId:f.get("objectId"), summary:f.get("summary"), problem:f.get("problem"), urgent:f.get("urgent")});
   e.target.reset(); renderAll();
 });
 
@@ -875,6 +892,23 @@ document.getElementById("formMaterial").addEventListener("submit", e=>{
 
 ["filterWork","filterPayments","filterReports","filterMaterials"].forEach(id=>{
   document.getElementById(id).addEventListener("change", renderAll);
+});
+
+document.getElementById("payrollMonth").addEventListener("change", renderPayrollCalc);
+
+document.addEventListener("click", e=>{
+  const btn = e.target.closest(".btn-generate-payment");
+  if(!btn) return;
+  Store.add("payments", {
+    id: uid(),
+    employeeId: btn.dataset.personId,
+    personType: btn.dataset.personType,
+    month: btn.dataset.month,
+    amount: Number(btn.dataset.amount),
+    payDate: todayISO(),
+    status: "Kutilmoqda"
+  });
+  renderAll();
 });
 
 document.addEventListener("change", e=>{
@@ -917,9 +951,10 @@ document.getElementById("btnExportEmployees").addEventListener("click", ()=>{
 });
 
 document.getElementById("btnExportPayments").addEventListener("click", ()=>{
-  const employees = getEmployees();
   const rows = getPayments().map(p=>({
-    "Xodim": nameById(employees,p.employeeId), "Oy": p.month, "Summa": p.amount,
+    "F.I.Sh.": personNameByType(p.employeeId, p.personType),
+    "Turi": p.personType==="fore" ? "Prorab" : "Xodim",
+    "Oy": p.month, "Summa": p.amount,
     "To'lov sanasi": p.payDate, "Holat": p.status
   }));
   exportToExcel(rows, "toliqlar.xlsx", "Oyliklar");
@@ -1026,64 +1061,6 @@ document.addEventListener("keydown", e=>{
 
 document.getElementById("btnTheme").addEventListener("click", toggleTheme);
 updateThemeButtonLabel();
-document.getElementById("btnTemplateEmployees").addEventListener("click", ()=>{
-  exportToExcel([{
-    "F.I.Sh.": "Aliyev Vali", "Lavozim": "Quruvchi", "Obyekt": "",
-    "Telefon": "+998901234567", "Qabul sanasi": "2026-01-15", "Oylik maosh": 4000000
-  }], "xodimlar-namuna.xlsx", "Namuna");
-});
-
-function excelDateToISO(val){
-  if(!val) return "";
-  if(typeof val === "number"){
-    const d = XLSX.SSF.parse_date_code(val);
-    if(!d) return "";
-    return `${d.y}-${String(d.m).padStart(2,"0")}-${String(d.d).padStart(2,"0")}`;
-  }
-  const s = String(val).trim();
-  const d = new Date(s);
-  return isNaN(d) ? "" : d.toISOString().slice(0,10);
-}
-
-document.getElementById("btnImportEmployees").addEventListener("click", ()=>{
-  document.getElementById("importEmployeesFile").click();
-});
-
-document.getElementById("importEmployeesFile").addEventListener("change", e=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev=>{
-    const wb = XLSX.read(ev.target.result, {type:"array"});
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet);
-    const objects = getObjects();
-    let added = 0, skipped = 0;
-    const newEmployees = getEmployees();
-    rows.forEach(row=>{
-      const name = row["F.I.Sh."] || row["Ism"] || row["Name"];
-      if(!name){ skipped++; return; }
-      const objName = row["Obyekt"] || "";
-      const matchedObj = objects.find(o=>(o.name||"").toLowerCase() === String(objName).toLowerCase());
-      newEmployees.unshift({
-        id: uid(),
-        name: String(name),
-        position: row["Lavozim"] || "",
-        objectId: matchedObj ? matchedObj.id : "",
-        phone: row["Telefon"] ? String(row["Telefon"]) : "",
-        hireDate: excelDateToISO(row["Qabul sanasi"]),
-        salary: Number(row["Oylik maosh"])||0
-      });
-      added++;
-    });
-    Store.set("employees", newEmployees);
-    renderAll();
-    alert(`${added} ta xodim qo'shildi.${skipped ? " " + skipped + " ta qator o'tkazib yuborildi (F.I.Sh. yo'q)." : ""}`);
-    e.target.value = "";
-  };
-  reader.readAsArrayBuffer(file);
-});
-
 document.getElementById("btnBackup").addEventListener("click", downloadFullBackup);
 document.getElementById("btnPrint").addEventListener("click", ()=>window.print());
 
