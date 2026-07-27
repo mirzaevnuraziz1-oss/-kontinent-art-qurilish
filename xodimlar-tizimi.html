@@ -808,6 +808,7 @@ function renderObjects(){
       ? `<div class="obj-meta"><span>Reja: ${fmtSum(plan)} so'm</span><span style="color:${overBudget?'var(--danger)':'inherit'};">Fakt: ${fmtSum(spent)} so'm${overBudget?' ⚠':''}</span></div>`
       : `<div class="obj-meta"><span>${fmtDate(o.startDate)} → ${fmtDate(o.planEndDate)}</span><span>${fmtSum(spent)} so'm</span></div>`;
     return `<div class="obj-card" data-status="${o.status}">
+      <button class="del-btn obj-del-btn" data-store="objects" data-id="${o.id}" title="Obyektni o'chirish">×</button>
       <div class="obj-name">${escapeHtml(o.name)}</div>
       <div class="obj-addr">${escapeHtml(o.address)}</div>
       <div class="obj-meta"><span>${escapeHtml(nameById(foremen,o.foremanId))}</span>
