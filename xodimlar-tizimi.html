@@ -43,7 +43,8 @@
     <button data-target="sec-payments"><span class="num">04</span>Oyliklar</button>
     <button data-target="sec-foremen"><span class="num">05</span>Prorablar</button>
     <button data-target="sec-reports"><span class="num">06</span>Prorab hisobotlari</button>
-    <button data-target="sec-objects"><span class="num">07</span>Obyektlar</button>
+    <button data-target="sec-tenders"><span class="num">07</span>Tenderlar</button>
+    <button data-target="sec-objects"><span class="num">08</span>Obyektlar</button>
   </nav>
 
   <main class="content">
@@ -306,7 +307,42 @@
       </div>
     </section>
 
-    <!-- 07 OBYEKTLAR -->
+    <!-- 07 TENDERLAR -->
+    <section id="sec-tenders" class="section">
+      <h1 class="page-title">Tenderlar</h1>
+      <p class="page-sub">Davlat tenderlari ro'yxati. Yutilgan tenderni bitta tugma bilan yangi obyektga aylantiring.</p>
+
+      <form id="formTender" class="card form-card">
+        <h3>Yangi tender qo'shish</h3>
+        <div class="form-grid">
+          <div class="field span-2"><label>Tender / loyiha nomi</label><input required name="name" placeholder="Masalan: Maktab binosini qurish"></div>
+          <div class="field"><label>Davlat buyurtmachisi</label><input required name="customer" placeholder="Buyurtmachi tashkilot"></div>
+          <div class="field"><label>Lot summasi (so'm)</label><input required type="number" min="0" name="lotSum" placeholder="0"></div>
+          <div class="field"><label>Ta'minot summasi (so'm)</label><input type="number" min="0" name="securityAmount" placeholder="Ixtiyoriy"></div>
+          <div class="field"><label>Ariza topshirish muddati</label><input required type="date" name="deadline"></div>
+          <div class="field"><label>Hujjatlar havolasi</label><input type="url" name="docLink" placeholder="Ixtiyoriy"></div>
+          <div class="field">
+            <label>Holat</label>
+            <select name="status">
+              <option value="kutilmoqda">Kutilmoqda</option>
+              <option value="yutildi">Yutildi</option>
+              <option value="yutqazildi">Yutqazildi</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Tenderni qo'shish</button></div>
+      </form>
+
+      <div class="dim-heading"><span class="dim-label">Tenderlar ro'yxati</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="wrap">Nomi</th><th>Buyurtmachi</th><th class="num">Lot summasi</th><th>Muddat</th><th>Holat</th><th>Hujjat</th><th></th><th></th></tr></thead>
+          <tbody id="tblTenders"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 08 OBYEKTLAR -->
     <section id="sec-objects" class="section">
       <h1 class="page-title">Obyektlar</h1>
       <p class="page-sub">Qurilish obyektlari va ularning material xarajatlari.</p>
@@ -397,6 +433,7 @@ function getWork(){ return Store.get("workRecords", []); }
 function getPayments(){ return Store.get("payments", []); }
 function getReports(){ return Store.get("reports", []); }
 function getMaterials(){ return Store.get("materials", []); }
+function getTenders(){ return Store.get("tenders", []); }
 
 function refreshSelects(){
   const employees = getEmployees(), foremen = getForemen(), objects = getObjects();
@@ -786,6 +823,34 @@ function renderReports(){
 const statusLabels = {jarayonda:"Jarayonda", tugallangan:"Tugallangan", toxtatilgan:"To'xtatilgan", kechikmoqda:"Kechikmoqda"};
 const statusBadge = {jarayonda:"info", tugallangan:"ok", toxtatilgan:"neutral", kechikmoqda:"danger"};
 
+const TENDER_STATUS_LABELS = {kutilmoqda:"Kutilmoqda", yutildi:"Yutildi", yutqazildi:"Yutqazildi"};
+const TENDER_STATUS_BADGE = {kutilmoqda:"pending", yutildi:"ok", yutqazildi:"danger"};
+
+function renderTenders(){
+  const tenders = getTenders();
+  document.getElementById("tblTenders").innerHTML = tenders.length ? tenders.map(t=>{
+    const overdue = t.status==="kutilmoqda" && t.deadline && t.deadline < todayISO();
+    let actionCell;
+    if(t.status !== "yutildi"){
+      actionCell = "—";
+    } else if(t.convertedObjectId){
+      actionCell = `<span class="badge ok">Obyekt yaratilgan</span>`;
+    } else {
+      actionCell = `<button type="button" class="btn btn-ghost btn-make-object" data-tender-id="${t.id}">Obyekt yaratish</button>`;
+    }
+    return `<tr>
+      <td class="wrap">${escapeHtml(t.name)}</td>
+      <td>${escapeHtml(t.customer)}</td>
+      <td class="num">${fmtSum(t.lotSum)}</td>
+      <td>${fmtDate(t.deadline)}${overdue ? ' <span class="badge danger">o\'tib ketgan</span>' : ''}</td>
+      <td><span class="badge ${TENDER_STATUS_BADGE[t.status]||'neutral'}">${TENDER_STATUS_LABELS[t.status]||t.status}</span></td>
+      <td>${t.docLink ? `<a href="${t.docLink}" target="_blank" rel="noopener">Havola</a>` : "—"}</td>
+      <td>${actionCell}</td>
+      <td><button class="del-btn" data-store="tenders" data-id="${t.id}">×</button></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="8"><div class="empty-note">Tenderlar kiritilmagan</div></td></tr>`;
+}
+
 function renderObjects(){
   const allObjects = getObjects(), foremen = getForemen(), materials = getMaterials();
   const q = (document.getElementById("searchObjects").value||"").trim().toLowerCase();
@@ -849,6 +914,7 @@ function renderAll(){
   renderPayments();
   renderForemen();
   renderReports();
+  renderTenders();
   renderObjects();
   renderMaterials();
 }
@@ -889,6 +955,18 @@ document.getElementById("formReport").addEventListener("submit", e=>{
   e.target.reset(); renderAll();
 });
 
+document.getElementById("formTender").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  Store.add("tenders", {
+    id: uid(), name: f.get("name"), customer: f.get("customer"),
+    lotSum: Number(f.get("lotSum"))||0, securityAmount: Number(f.get("securityAmount"))||0,
+    deadline: f.get("deadline"), docLink: f.get("docLink"), status: f.get("status"),
+    convertedObjectId: ""
+  });
+  e.target.reset(); renderAll();
+});
+
 document.getElementById("formObject").addEventListener("submit", e=>{
   e.preventDefault();
   const f = new FormData(e.target);
@@ -908,6 +986,25 @@ document.getElementById("formMaterial").addEventListener("submit", e=>{
 });
 
 document.getElementById("payrollMonth").addEventListener("change", renderPayrollCalc);
+
+document.addEventListener("click", e=>{
+  const btn = e.target.closest(".btn-make-object");
+  if(!btn) return;
+  const tenders = getTenders();
+  const tender = tenders.find(t=>t.id===btn.dataset.tenderId);
+  if(!tender || tender.convertedObjectId) return;
+
+  const newObjectId = uid();
+  Store.add("objects", {
+    id: newObjectId, name: tender.name, address: "",
+    foremanId: "", startDate: todayISO(), planEndDate: "",
+    planBudget: tender.lotSum || 0, status: "jarayonda"
+  });
+
+  tender.convertedObjectId = newObjectId;
+  Store.set("tenders", tenders);
+  renderAll();
+});
 
 document.addEventListener("click", e=>{
   const btn = e.target.closest(".btn-generate-payment");
@@ -986,7 +1083,7 @@ document.getElementById("btnExportMaterials").addEventListener("click", ()=>{
 const DELETE_LABELS = {
   employees: "xodim", foremen: "prorab", objects: "obyekt",
   payments: "to'lov yozuvi", workRecords: "ish yozuvi",
-  reports: "hisobot", materials: "xarajat yozuvi"
+  reports: "hisobot", materials: "xarajat yozuvi", tenders: "tender"
 };
 
 function deleteItemLabel(store, id){
