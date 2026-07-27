@@ -759,6 +759,13 @@ function renderObjects(){
       const daysLeft = Math.ceil((new Date(o.planEndDate) - new Date(todayISO())) / 86400000);
       if(daysLeft < 0) deadlineNote = `<div class="badge danger" style="margin-top:8px;">Muddat o'tib ketgan (${Math.abs(daysLeft)} kun)</div>`;
       else if(daysLeft <= 14) deadlineNote = `<div class="badge pending" style="margin-top:8px;">Muddatga ${daysLeft} kun qoldi</div>`;
+      if(daysLeft >= 0 && daysLeft <= 3){
+        const notified = Store.get("telegramDeadlineNotified", []);
+        if(!notified.includes(o.id)){
+          sendTelegramNotification(`⏰ MUDDAT YAQINLASHMOQDA\nObyekt: ${o.name}\nTugash sanasi: ${fmtDate(o.planEndDate)} (${daysLeft} kun qoldi)`);
+          Store.set("telegramDeadlineNotified", [...notified, o.id]);
+        }
+      }
     }
     const budgetLine = plan > 0
       ? `<div class="obj-meta"><span>Reja: ${fmtSum(plan)} so'm</span><span style="color:${overBudget?'var(--danger)':'inherit'};">Fakt: ${fmtSum(spent)} so'm${overBudget?' ⚠':''}</span></div>`
@@ -840,7 +847,15 @@ document.getElementById("formForeman").addEventListener("submit", e=>{
 document.getElementById("formReport").addEventListener("submit", e=>{
   e.preventDefault();
   const f = new FormData(e.target);
-  Store.add("reports", {id:uid(), foremanId:f.get("foremanId"), date:f.get("date"), objectId:f.get("objectId"), summary:f.get("summary"), problem:f.get("problem"), urgent:f.get("urgent")});
+  const foremanId = f.get("foremanId"), objectId = f.get("objectId"), urgent = f.get("urgent");
+  Store.add("reports", {id:uid(), foremanId, date:f.get("date"), objectId, summary:f.get("summary"), problem:f.get("problem"), urgent});
+  if(urgent === "Ha"){
+    const foreman = getForemen().find(x=>x.id===foremanId);
+    const obj = getObjects().find(x=>x.id===objectId);
+    sendTelegramNotification(
+      `⚠️ USTUVOR MUAMMO — hisobot\nProrab: ${foreman?foreman.name:"—"}\nObyekt: ${obj?obj.name:"—"}\nMuammo: ${f.get("problem")||"—"}`
+    );
+  }
   e.target.reset(); renderAll();
 });
 
