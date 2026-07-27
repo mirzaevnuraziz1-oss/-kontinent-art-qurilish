@@ -2,26 +2,26 @@
    KONTINENT ART BUSINESS — shared app logic
    Simple localStorage-backed data layer used by both system pages.
    ========================================================================== */
-
+ 
 /* Ma'lumotlar endi Supabase'da (bulutda) saqlanadi — barcha qurilmalarda bir xil
    ko'rinadi va real vaqtda sinxronlanadi. Internet yo'q bo'lsa oxirgi ko'chirilgan
    nusxa brauzer keshidan (localStorage) ko'rsatiladi. */
 const SUPABASE_URL = "https://nuykhzrzcaanrygnjede.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWtoenJ6Y2FhbnJ5Z25qZWRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMDcwNDAsImV4cCI6MjA5OTU4MzA0MH0.0Vv3-QJKhCPBHcCM3dlQ-Dkrt3q-2blxOIglyBixxjY";
 const STORE_PREFIX = "kab_";
-
+ 
 const Store = {
   _cache: {},
   _client: null,
   _ready: false,
-
+ 
   client(){
     if(!this._client && window.supabase){
       this._client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     return this._client;
   },
-
+ 
   /* Load everything from Supabase, fall back to last-known localStorage cache
      if offline, and subscribe to live changes from other devices. */
   async init(onRemoteChange){
@@ -30,7 +30,7 @@ const Store = {
       const raw = localStorage.getItem(STORE_PREFIX + "cache");
       if(raw) this._cache = JSON.parse(raw) || {};
     }catch(e){ /* ignore */ }
-
+ 
     const client = this.client();
     if(client){
       try{
@@ -40,7 +40,7 @@ const Store = {
           this._persistLocalCache();
         }
       }catch(e){ /* offline: keep local cache */ }
-
+ 
       try{
         client
           .channel("kab_data_changes")
@@ -57,16 +57,16 @@ const Store = {
     }
     this._ready = true;
   },
-
+ 
   _persistLocalCache(){
     try{ localStorage.setItem(STORE_PREFIX + "cache", JSON.stringify(this._cache)); }catch(e){}
   },
-
+ 
   get(key, fallback){
     if(Object.prototype.hasOwnProperty.call(this._cache, key)) return this._cache[key];
     return fallback !== undefined ? fallback : [];
   },
-
+ 
   set(key, value){
     this._cache[key] = value;
     this._persistLocalCache();
@@ -90,9 +90,9 @@ const Store = {
     return list;
   }
 };
-
+ 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-
+ 
 function flashSaved(){
   const pill = document.getElementById("savedPill");
   if(!pill) return;
@@ -100,7 +100,7 @@ function flashSaved(){
   clearTimeout(flashSaved._t);
   flashSaved._t = setTimeout(()=>pill.classList.remove("flash"), 600);
 }
-
+ 
 function fmtSum(n){
   n = Number(n)||0;
   return n.toLocaleString("ru-RU").replace(/,/g,' ');
@@ -124,7 +124,7 @@ function escapeHtml(s){
 }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function currentMonthKey(){ return new Date().toISOString().slice(0,7); }
-
+ 
 /* ==========================================================================
    Navigation (rail tabs)
    ========================================================================== */
@@ -140,7 +140,7 @@ function initNav(){
     });
   });
 }
-
+ 
 /* ==========================================================================
    Generic select-populator
    ========================================================================== */
@@ -165,7 +165,7 @@ function fillSelect(selectEl, items, {value="id", label="name", placeholder="Tan
   });
   if([...selectEl.options].some(o=>o.value===current)) selectEl.value = current;
 }
-
+ 
 /* ==========================================================================
    Basic form hints: hire/start dates can't be in the future, phone numbers
    get a light format check. Doesn't block typing — just flags on blur/submit
@@ -182,20 +182,20 @@ function applyFormHints(){
     el.title = "Telefon raqamini to'g'ri formatda kiriting, masalan: +998 90 123 45 67";
   });
 }
-
+ 
 /* ==========================================================================
    Dark / light theme toggle. Preference is saved per-browser (not synced
    across devices — it's a display preference, not business data).
    ========================================================================== */
 const THEME_KEY = "kab_theme";
-
+ 
 (function applySavedTheme(){
   try{
     const saved = localStorage.getItem(THEME_KEY);
     if(saved === "dark") document.documentElement.setAttribute("data-theme", "dark");
   }catch(e){ /* ignore */ }
 })();
-
+ 
 function toggleTheme(){
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
   if(isDark){
@@ -207,21 +207,21 @@ function toggleTheme(){
   }
   updateThemeButtonLabel();
 }
-
+ 
 function updateThemeButtonLabel(){
   const btn = document.getElementById("btnTheme");
   if(!btn) return;
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
   btn.textContent = isDark ? "☀️ Yorug'" : "🌙 Tungi";
 }
-
+ 
 /* ==========================================================================
    Viewer role — a lightweight, per-browser label ("Direktor" / "Zam. direktor")
    shown in the header. Not real access control — just makes clear who's
    looking at the system on a shared device.
    ========================================================================== */
 const ROLE_KEY = "kab_role";
-
+ 
 function initRoleBadge(){
   const sel = document.getElementById("roleSelect");
   if(!sel) return;
@@ -233,7 +233,7 @@ function initRoleBadge(){
     try{ localStorage.setItem(ROLE_KEY, sel.value); }catch(e){}
   });
 }
-
+ 
 /* ==========================================================================
    Telegram notifications. Fill in your bot token and chat id below — see
    the setup instructions you were given (BotFather + getUpdates).
@@ -243,7 +243,7 @@ function initRoleBadge(){
    ========================================================================== */
 const TELEGRAM_BOT_TOKEN = "8505892508:AAGPurkNFJnEWKx73PRnZ1OBQQXCGu1Z1aA";
 const TELEGRAM_CHAT_ID = "487346580";
-
+ 
 async function sendTelegramNotification(text){
   if(!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === "BOT_TOKEN_BU_YERGA") return;
   try{
@@ -251,12 +251,12 @@ async function sendTelegramNotification(text){
     await fetch(url, { mode: "no-cors" });
   }catch(e){ /* ignore — bildirishnoma yuborilmasa ham ish davom etadi */ }
 }
-
+ 
 function nameById(list, id){
   const found = list.find(i=>i.id===id);
   return found ? (found.name || found.fullName) : "—";
 }
-
+ 
 /* ==========================================================================
    Full backup — downloads every stored key as one JSON file
    ========================================================================== */
@@ -275,7 +275,7 @@ function downloadFullBackup(){
   a.remove();
   URL.revokeObjectURL(url);
 }
-
+ 
 /* ==========================================================================
    Generic sortable table headers.
    Pass the <table> element, a map of column-index -> field name (or a
@@ -302,7 +302,7 @@ function makeSortable(table, fieldMap, onSortChange){
     });
   });
 }
-
+ 
 function sortRows(rows, field, dir){
   const sorted = [...rows].sort((a,b)=>{
     let va = typeof field === "function" ? field(a) : a[field];
