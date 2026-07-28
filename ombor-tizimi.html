@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <script src="password-gate (1).js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Ombor tizimi — KONTINENT ART BUSINESS</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark"><span>KAB</span></div>
+      <div class="brand-text">
+        <div class="name">Ombor tizimi</div>
+        <div class="sub">Mahsulot qoldiqlari — Kontinent Art Business</div>
+      </div>
+    </div>
+    <span id="savedPill" class="saved-pill"><span class="dot"></span>Saqlangan</span>
+    <select id="roleSelect" class="role-select">
+      <option value="Direktor">Direktor</option>
+      <option value="Zam. direktor">Zam. direktor</option>
+    </select>
+    <button type="button" class="btn btn-ghost" id="btnTheme" style="padding:8px 14px;">🌙 Tungi</button>
+    <button type="button" class="btn btn-ghost" id="btnPrint" style="padding:8px 14px;">Chop etish</button>
+    <a class="home-link" href="index.html">Bosh sahifa</a>
+  </div>
+</header>
+
+<div class="app-shell">
+  <nav class="railnav">
+    <div class="legend-label">Bo'limlar</div>
+    <button class="active" data-target="sec-overview"><span class="num">01</span>Umumiy holat</button>
+    <button data-target="sec-items"><span class="num">02</span>Mahsulotlar</button>
+    <button data-target="sec-moves"><span class="num">03</span>Kirim / Chiqim</button>
+  </nav>
+
+  <main class="content">
+
+    <!-- 01 UMUMIY HOLAT -->
+    <section id="sec-overview" class="section active">
+      <h1 class="page-title">Ombor holati</h1>
+      <p class="page-sub">Barcha mahsulotlarning joriy qoldig'i, taxminiy qiymati va kam qolganlar ro'yxati.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px;">
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Mahsulot turlari</div>
+          <div class="stat-num" id="statItemCount">0</div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Kam qolgan / tugagan</div>
+          <div class="stat-num" id="statLowCount" style="color:var(--danger);">0</div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Ombordagi taxminiy qiymat</div>
+          <div class="stat-num" id="statTotalValue">0</div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-label">Joriy oy — kirim / chiqim</div>
+          <div class="stat-num" id="statMonthMoves" style="font-size:18px;">0 / 0</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="card card-pad">
+          <div class="stat-label" style="margin-bottom:14px;">Qiymati bo'yicha TOP mahsulotlar</div>
+          <canvas id="chartTopValue" height="180"></canvas>
+        </div>
+        <div class="card card-pad">
+          <div class="stat-label" style="margin-bottom:14px;">Oylik harakat trendi (so'nggi 6 oy)</div>
+          <canvas id="chartMoveTrend" height="180"></canvas>
+        </div>
+      </div>
+
+      <div class="dim-heading"><span class="dim-label">Kam qolgan mahsulotlar</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="wrap">Mahsulot</th><th class="num">Qoldiq</th><th>Birlik</th><th class="num">Minimal zaxira</th><th>Holat</th></tr></thead>
+          <tbody id="tblLowStock"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 02 MAHSULOTLAR -->
+    <section id="sec-items" class="section">
+      <h1 class="page-title">Mahsulotlar</h1>
+      <p class="page-sub">Ombor nomenklaturasi — har bir mahsulot turi va uning minimal zaxira chegarasi.</p>
+
+      <form id="formItem" class="card form-card">
+        <h3>Yangi mahsulot turi qo'shish</h3>
+        <div class="form-grid">
+          <div class="field span-2"><label>Mahsulot nomi</label><input required name="name" placeholder="Masalan: Portlandcement M400"></div>
+          <div class="field">
+            <label>O'lchov birligi</label>
+            <select required name="unit">
+              <option value="dona">dona</option>
+              <option value="kg">kg</option>
+              <option value="tonna">tonna</option>
+              <option value="m3">m³</option>
+              <option value="m2">m²</option>
+              <option value="metr">metr</option>
+              <option value="litr">litr</option>
+              <option value="quti">quti</option>
+              <option value="paket">paket</option>
+            </select>
+          </div>
+          <div class="field"><label>Minimal zaxira</label><input required type="number" min="0" step="0.01" name="minStock" placeholder="0"></div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Mahsulotni qo'shish</button></div>
+      </form>
+
+      <div class="table-toolbar">
+        <div class="dim-heading" style="flex:1;margin-bottom:0;"><span class="dim-label">Joriy qoldiqlar</span></div>
+        <button type="button" class="btn btn-ghost" id="btnExportStock">Excel'ga yuklab olish</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="wrap">Mahsulot</th><th>Birlik</th><th class="num">Kirim (jami)</th><th class="num">Chiqim (jami)</th><th class="num">Qoldiq</th><th class="num">Taxminiy qiymat</th><th>Holat</th><th></th></tr></thead>
+          <tbody id="tblItems"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 03 KIRIM / CHIQIM -->
+    <section id="sec-moves" class="section">
+      <h1 class="page-title">Kirim / Chiqim</h1>
+      <p class="page-sub">Omborga mahsulot kirim qilish yoki obyektga chiqim qilish. Har bir harakat qoldiqni avtomatik yangilaydi.</p>
+
+      <form id="formMove" class="card form-card">
+        <h3>Yangi harakat qo'shish</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label>Turi</label>
+            <select required name="type" id="moveType">
+              <option value="kirim">Kirim (omborga keldi)</option>
+              <option value="chiqim">Chiqim (obyektga berildi)</option>
+            </select>
+          </div>
+          <div class="field span-2"><label>Mahsulot</label><select required name="itemId"></select></div>
+          <div class="field"><label>Miqdor</label><input required type="number" min="0.01" step="0.01" name="qty" placeholder="0"></div>
+          <div class="field"><label>Sana</label><input required type="date" name="date"></div>
+          <div class="field" id="fieldUnitPrice"><label>Birlik narxi (so'm, ixtiyoriy)</label><input type="number" min="0" name="unitPrice" placeholder="0"></div>
+          <div class="field" id="fieldSupplier"><label>Yetkazib beruvchi (ixtiyoriy)</label><input name="supplier" placeholder="Ixtiyoriy"></div>
+          <div class="field" id="fieldObject" style="display:none;"><label>Obyekt</label><select name="objectId"></select></div>
+          <div class="field span-2"><label>Izoh</label><input name="note" placeholder="Ixtiyoriy"></div>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn">Harakatni saqlash</button></div>
+      </form>
+
+      <div class="table-toolbar">
+        <div class="dim-heading" style="flex:1;margin-bottom:0;"><span class="dim-label">Harakatlar tarixi</span></div>
+        <select id="filterMoveItem"></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sana</th><th>Turi</th><th class="wrap">Mahsulot</th><th class="num">Miqdor</th><th>Obyekt / Yetkazib beruvchi</th><th class="wrap">Izoh</th><th></th></tr></thead>
+          <tbody id="tblMoves"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="footer-note">KONTINENT ART BUSINESS — Ombor tizimi · ma'lumotlar bulutda (Supabase) saqlanadi, boshqa tizimlar bilan bir xil ma'lumotlar bazasidan foydalanadi</div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="app.js"></script>
+<script>
+initNav();
+initRoleBadge();
+
+function getItems(){ return Store.get("warehouseItems", []); }
+function getMoves(){ return Store.get("warehouseMovements", []); }
+function getObjects(){ return Store.get("objects", []); }
+
+function exportToExcel(rows, filename, sheetName){
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName || "Sheet1");
+  XLSX.writeFile(wb, filename);
+}
+
+const UNIT_LABELS = {dona:"dona", kg:"kg", tonna:"tonna", m3:"m³", m2:"m²", metr:"metr", litr:"litr", quti:"quti", paket:"paket"};
+const STATUS_LABELS = {ok:"Yetarli", kam:"Kam qolgan", tugagan:"Tugagan"};
+const STATUS_BADGE = {ok:"ok", kam:"pending", tugagan:"danger"};
+
+/* ---------- core stock calculation ---------- */
+function computeBalances(){
+  const items = getItems();
+  const moves = getMoves();
+  return items.map(it=>{
+    const itemMoves = moves.filter(m=>m.itemId===it.id);
+    const kirim = itemMoves.filter(m=>m.type==="kirim").reduce((s,m)=>s+(Number(m.qty)||0),0);
+    const chiqim = itemMoves.filter(m=>m.type==="chiqim").reduce((s,m)=>s+(Number(m.qty)||0),0);
+    const balance = kirim - chiqim;
+
+    const pricedKirim = itemMoves.filter(m=>m.type==="kirim" && Number(m.unitPrice)>0);
+    const totalCost = pricedKirim.reduce((s,m)=>s+(Number(m.qty)||0)*(Number(m.unitPrice)||0),0);
+    const totalPricedQty = pricedKirim.reduce((s,m)=>s+(Number(m.qty)||0),0);
+    const avgPrice = totalPricedQty > 0 ? totalCost/totalPricedQty : 0;
+    const value = Math.max(balance,0) * avgPrice;
+
+    let status = "ok";
+    if(balance <= 0) status = "tugagan";
+    else if(balance <= (Number(it.minStock)||0)) status = "kam";
+
+    return { item:it, kirim, chiqim, balance, avgPrice, value, status };
+  });
+}
+
+let topValueChart = null;
+let moveTrendChart = null;
+
+function renderOverview(){
+  const balances = computeBalances();
+  const moves = getMoves();
+
+  document.getElementById("statItemCount").textContent = balances.length;
+  const lowOnes = balances.filter(b=>b.status!=="ok");
+  document.getElementById("statLowCount").textContent = lowOnes.length;
+  const totalValue = balances.reduce((s,b)=>s+b.value,0);
+  document.getElementById("statTotalValue").textContent = fmtSum(totalValue) + " so'm";
+
+  const ym = currentMonthKey();
+  const monthKirim = moves.filter(m=>m.type==="kirim" && (m.date||"").slice(0,7)===ym).length;
+  const monthChiqim = moves.filter(m=>m.type==="chiqim" && (m.date||"").slice(0,7)===ym).length;
+  document.getElementById("statMonthMoves").textContent = `${monthKirim} / ${monthChiqim}`;
+
+  document.getElementById("tblLowStock").innerHTML = lowOnes.length ? lowOnes.map(b=>`
+    <tr>
+      <td class="wrap">${escapeHtml(b.item.name)}</td>
+      <td class="num">${b.balance}</td>
+      <td>${UNIT_LABELS[b.item.unit]||b.item.unit}</td>
+      <td class="num">${b.item.minStock}</td>
+      <td><span class="badge ${STATUS_BADGE[b.status]}">${STATUS_LABELS[b.status]}</span></td>
+    </tr>`).join("") : `<tr><td colspan="5"><div class="empty-note">Kam qolgan mahsulot yo'q</div></td></tr>`;
+
+  /* low-stock Telegram alert, re-arms once an item goes back to "ok" */
+  const notifiedKey = "telegramLowStockNotified";
+  let notified = Store.get(notifiedKey, []);
+  let changed = false;
+  balances.forEach(b=>{
+    const already = notified.includes(b.item.id);
+    if(b.status !== "ok" && !already){
+      sendTelegramNotification(`📦 Omborda mahsulot kam qoldi\nMahsulot: ${b.item.name}\nQoldiq: ${b.balance} ${UNIT_LABELS[b.item.unit]||b.item.unit}\nMinimal zaxira: ${b.item.minStock}`);
+      notified.push(b.item.id); changed = true;
+    } else if(b.status === "ok" && already){
+      notified = notified.filter(id=>id!==b.item.id); changed = true;
+    }
+  });
+  if(changed) Store.set(notifiedKey, notified);
+
+  if(typeof Chart === "undefined") return;
+
+  const topItems = [...balances].sort((a,b)=>b.value-a.value).slice(0,8);
+  const ctx1 = document.getElementById("chartTopValue");
+  if(topValueChart) topValueChart.destroy();
+  topValueChart = new Chart(ctx1, {
+    type: "bar",
+    data: {
+      labels: topItems.length ? topItems.map(b=>b.item.name) : ["Ma'lumot yo'q"],
+      datasets: [{ data: topItems.length ? topItems.map(b=>b.value) : [0], backgroundColor:"#1f6fb2" }]
+    },
+    options: {
+      indexAxis: "y",
+      plugins:{ legend:{ display:false } },
+      scales:{ x:{ beginAtZero:true, ticks:{ callback:v=>fmtSum(v) } } }
+    }
+  });
+
+  const months = [];
+  const now = new Date();
+  for(let i=5; i>=0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
+  }
+  const kirimByMonth = months.map(ym=>moves.filter(m=>m.type==="kirim" && (m.date||"").slice(0,7)===ym).reduce((s,m)=>s+(Number(m.qty)||0),0));
+  const chiqimByMonth = months.map(ym=>moves.filter(m=>m.type==="chiqim" && (m.date||"").slice(0,7)===ym).reduce((s,m)=>s+(Number(m.qty)||0),0));
+  const ctx2 = document.getElementById("chartMoveTrend");
+  if(moveTrendChart) moveTrendChart.destroy();
+  moveTrendChart = new Chart(ctx2, {
+    type: "bar",
+    data: {
+      labels: months.map(monthLabel),
+      datasets: [
+        { label:"Kirim", data: kirimByMonth, backgroundColor:"#2e7d4f" },
+        { label:"Chiqim", data: chiqimByMonth, backgroundColor:"#c43b3b" }
+      ]
+    },
+    options: { plugins:{ legend:{ position:"bottom" } }, scales:{ y:{ beginAtZero:true } } }
+  });
+}
+
+function renderItems(){
+  const balances = computeBalances();
+  document.getElementById("tblItems").innerHTML = balances.length ? balances.map(b=>`
+    <tr>
+      <td class="wrap">${escapeHtml(b.item.name)}</td>
+      <td>${UNIT_LABELS[b.item.unit]||b.item.unit}</td>
+      <td class="num">${b.kirim}</td>
+      <td class="num">${b.chiqim}</td>
+      <td class="num">${b.balance}</td>
+      <td class="num">${fmtSum(Math.round(b.value))}</td>
+      <td><span class="badge ${STATUS_BADGE[b.status]}">${STATUS_LABELS[b.status]}</span></td>
+      <td><button class="del-btn" data-store="warehouseItems" data-id="${b.item.id}">×</button></td>
+    </tr>`).join("") : `<tr><td colspan="8"><div class="empty-note">Mahsulot kiritilmagan</div></td></tr>`;
+}
+
+function refreshSelects(){
+  const items = getItems();
+  const objects = getObjects();
+  fillSelect(document.querySelector('#formMove select[name="itemId"]'), items, {value:"id", label:"name", placeholder:"Mahsulot tanlang"});
+  fillSelect(document.querySelector('#formMove select[name="objectId"]'), objects, {value:"id", label:"name", placeholder:"Obyekt tanlang"});
+  fillSelect(document.getElementById("filterMoveItem"), items, {value:"id", label:"name", includeAll:true});
+}
+
+function toggleMoveFields(){
+  const type = document.getElementById("moveType").value;
+  document.getElementById("fieldObject").style.display = type==="chiqim" ? "" : "none";
+  document.querySelector('#formMove select[name="objectId"]').required = type==="chiqim";
+  document.getElementById("fieldUnitPrice").style.display = type==="kirim" ? "" : "none";
+  document.getElementById("fieldSupplier").style.display = type==="kirim" ? "" : "none";
+}
+
+function renderMoves(){
+  const items = getItems();
+  const objects = getObjects();
+  const filterVal = document.getElementById("filterMoveItem").value;
+  const list = getMoves().filter(m=>!filterVal || m.itemId===filterVal);
+  document.getElementById("tblMoves").innerHTML = list.length ? list.map(m=>{
+    const itemName = nameById(items, m.itemId);
+    const extra = m.type==="chiqim" ? escapeHtml(nameById(objects, m.objectId)) : escapeHtml(m.supplier||"—");
+    return `<tr>
+      <td>${fmtDate(m.date)}</td>
+      <td><span class="badge ${m.type==='kirim'?'ok':'neutral'}">${m.type==='kirim'?'Kirim':'Chiqim'}</span></td>
+      <td class="wrap">${escapeHtml(itemName)}</td>
+      <td class="num">${m.qty}</td>
+      <td>${extra}</td>
+      <td class="wrap">${escapeHtml(m.note||"—")}</td>
+      <td><button class="del-btn" data-store="warehouseMovements" data-id="${m.id}">×</button></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="7"><div class="empty-note">Harakatlar yo'q</div></td></tr>`;
+}
+
+function renderAll(){
+  refreshSelects();
+  renderOverview();
+  renderItems();
+  renderMoves();
+}
+
+/* ---------- form handlers ---------- */
+document.getElementById("formItem").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  Store.add("warehouseItems", { id:uid(), name:f.get("name"), unit:f.get("unit"), minStock:Number(f.get("minStock"))||0 });
+  e.target.reset(); renderAll();
+});
+
+document.getElementById("moveType").addEventListener("change", toggleMoveFields);
+toggleMoveFields();
+
+document.getElementById("formMove").addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const type = f.get("type");
+  Store.add("warehouseMovements", {
+    id: uid(), type, itemId: f.get("itemId"), qty: Number(f.get("qty"))||0, date: f.get("date"),
+    unitPrice: type==="kirim" ? (Number(f.get("unitPrice"))||0) : 0,
+    supplier: type==="kirim" ? f.get("supplier") : "",
+    objectId: type==="chiqim" ? f.get("objectId") : "",
+    note: f.get("note")
+  });
+  e.target.reset();
+  document.querySelector('#formMove select[name="type"]').value = type;
+  toggleMoveFields();
+  renderAll();
+});
+
+document.getElementById("filterMoveItem").addEventListener("change", renderMoves);
+
+document.getElementById("btnExportStock").addEventListener("click", ()=>{
+  const rows = computeBalances().map(b=>({
+    "Mahsulot": b.item.name, "Birlik": UNIT_LABELS[b.item.unit]||b.item.unit,
+    "Kirim (jami)": b.kirim, "Chiqim (jami)": b.chiqim, "Qoldiq": b.balance,
+    "Taxminiy qiymat": Math.round(b.value), "Holat": STATUS_LABELS[b.status]
+  }));
+  exportToExcel(rows, "ombor-qoldiqlari.xlsx", "Ombor");
+});
+
+/* generic delete, mirrors the pattern used on the other systems */
+document.addEventListener("click", e=>{
+  const btn = e.target.closest(".del-btn");
+  if(!btn) return;
+  const store = btn.dataset.store, id = btn.dataset.id;
+  if(!confirm("Ushbu yozuvni o'chirishni tasdiqlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.")) return;
+  Store.remove(store, id);
+  renderAll();
+});
+
+document.getElementById("btnTheme").addEventListener("click", toggleTheme);
+updateThemeButtonLabel();
+document.getElementById("btnPrint").addEventListener("click", ()=>window.print());
+
+const moveDateInput = document.querySelector('#formMove input[name="date"]');
+if(moveDateInput) moveDateInput.value = todayISO();
+
+Store.init(renderAll).then(renderAll);
+</script>
+</body>
+</html>
