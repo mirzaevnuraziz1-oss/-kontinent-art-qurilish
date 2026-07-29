@@ -246,7 +246,7 @@ function renderOverview(){
   balances.forEach(b=>{
     const already = notified.includes(b.item.id);
     if(b.status !== "ok" && !already){
-      sendTelegramNotification(`📦 Omborda mahsulot kam qoldi\nMahsulot: ${b.item.name}\nQoldiq: ${b.balance} ${UNIT_LABELS[b.item.unit]||b.item.unit}\nMinimal zaxira: ${b.item.minStock}`);
+      sendTelegramNotification(`📦 Omborda mahsulot kam qoldi\nMahsulot: ${b.item.name}\nQoldiq: ${b.balance} ${UNIT_LABELS[b.item.unit]||b.item.unit}\nMinimal zaxira: ${b.item.minStock}`, "ombor");
       notified.push(b.item.id); changed = true;
     } else if(b.status === "ok" && already){
       notified = notified.filter(id=>id!==b.item.id); changed = true;

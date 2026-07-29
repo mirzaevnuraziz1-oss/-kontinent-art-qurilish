@@ -241,14 +241,23 @@ function initRoleBadge(){
    dev tools, same tradeoff as the site password — fine for an internal
    notify-only bot, just don't reuse this token for anything sensitive.
    ========================================================================== */
-const TELEGRAM_BOT_TOKEN = "8505892508:AAGPurkNFJnEWKx73PRnZ1OBQQXCGu1Z1aA";
-const TELEGRAM_CHAT_ID = "487346580";
+/* ==========================================================================
+   Telegram notifications. The bot token no longer lives in this file — it's
+   stored as a secret on the server (Supabase Edge Function "telegram-notify"),
+   so it can't be read out of the page source anymore. Which chat a message
+   goes to is decided server-side by category (see the telegram_routes table),
+   which means you can repoint categories to different chats/groups without
+   touching this file.
+   ========================================================================== */
 
-async function sendTelegramNotification(text){
-  if(!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === "BOT_TOKEN_BU_YERGA") return;
+async function sendTelegramNotification(text, category){
   try{
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${encodeURIComponent(TELEGRAM_CHAT_ID)}&text=${encodeURIComponent(text)}`;
-    await fetch(url, { mode: "no-cors" });
+    const client = Store.client();
+    if(!client) return;
+    const { error } = await client.functions.invoke("telegram-notify", {
+      body: { text, category: category || "general" }
+    });
+    if(error) console.error("Telegram yuborishda xato:", error);
   }catch(e){ /* ignore — bildirishnoma yuborilmasa ham ish davom etadi */ }
 }
 

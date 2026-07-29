@@ -533,7 +533,8 @@ function renderStats(){
     newlyOverdue.forEach(p=>{
       const name = personNameByType(p.employeeId, p.personType);
       sendTelegramNotification(
-        `⏰ To'lov muddati o'tdi\nF.I.Sh.: ${name}\nOy: ${monthLabel(p.month)}\nSumma: ${fmtSum(p.amount)} so'm\nRejalashtirilgan sana: ${fmtDate(p.payDate)}`
+        `⏰ To'lov muddati o'tdi\nF.I.Sh.: ${name}\nOy: ${monthLabel(p.month)}\nSumma: ${fmtSum(p.amount)} so'm\nRejalashtirilgan sana: ${fmtDate(p.payDate)}`,
+        "tolovlar"
       );
     });
     Store.set("telegramOverdueNotified", [...notifiedOverdue, ...newlyOverdue.map(p=>p.id)]);
@@ -927,7 +928,7 @@ function renderDocs(){
       const msg = st.days < 0
         ? `📄 Hujjat muddati tugagan\nNomi: ${d.name}\nAmal qilish muddati: ${fmtDate(d.expiryDate)}`
         : `📄 Hujjat muddati yaqinlashmoqda (${st.days} kun qoldi)\nNomi: ${d.name}\nAmal qilish muddati: ${fmtDate(d.expiryDate)}`;
-      sendTelegramNotification(msg);
+      sendTelegramNotification(msg, "hujjatlar");
     });
     Store.set("telegramDocExpiryNotified", [...notified, ...dueForNotice.map(d=>d.id)]);
   }

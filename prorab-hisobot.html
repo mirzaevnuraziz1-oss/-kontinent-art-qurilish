@@ -251,7 +251,8 @@ document.getElementById("formReport").addEventListener("submit", async e=>{
     const object = getObjects().find(o=>o.id===objectId);
     const problemText = document.getElementById("txtProblem").value.trim();
     sendTelegramNotification(
-      `🚨 Ustuvor muammo — prorab hisobotida\nProrab: ${foreman?foreman.name:"—"}\nObyekt: ${object?object.name:"—"}\nMuammo: ${problemText||"—"}`
+      `🚨 Ustuvor muammo — prorab hisobotida\nProrab: ${foreman?foreman.name:"—"}\nObyekt: ${object?object.name:"—"}\nMuammo: ${problemText||"—"}`,
+      "shoshilinch"
     );
   }
 

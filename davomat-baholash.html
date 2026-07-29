@@ -297,7 +297,8 @@ function cycleStatus(key, day){
             const list = storeKey === "emp" ? getEmployees() : getForemen();
             const person = list.find(p=>p.id===personId);
             sendTelegramNotification(
-              `🔴 ${storeKey==="emp"?"Xodim":"Prorab"} ${runLen} kun ketma-ket kelmadi\nIsm: ${person?person.name:"—"}\nKunlar: ${runStart}-${runStart+runLen-1} (${monthLabel(monthPicker.value)})`
+              `🔴 ${storeKey==="emp"?"Xodim":"Prorab"} ${runLen} kun ketma-ket kelmadi\nIsm: ${person?person.name:"—"}\nKunlar: ${runStart}-${runStart+runLen-1} (${monthLabel(monthPicker.value)})`,
+              "davomat"
             );
             Store.set("telegramAbsenceNotified", [...notified, notifiedKey]);
           }
