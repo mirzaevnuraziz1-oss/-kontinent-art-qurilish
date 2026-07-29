@@ -75,6 +75,7 @@
       <div class="att-scroll" style="margin-bottom:10px;">
         <table class="att-table" id="attTableEmployees"></table>
       </div>
+      <div class="att-mobile" id="attMobileEmployees"></div>
       <div class="legend-row">
         <span class="item"><span class="swatch present"></span>Keldi</span>
         <span class="item"><span class="swatch late"></span>Kechikdi</span>
@@ -105,6 +106,7 @@
       <div class="att-scroll" style="margin-bottom:10px;">
         <table class="att-table" id="attTableForemen"></table>
       </div>
+      <div class="att-mobile" id="attMobileForemen"></div>
       <div class="legend-row">
         <span class="item"><span class="swatch present"></span>Keldi</span>
         <span class="item"><span class="swatch late"></span>Kechikdi</span>
@@ -204,28 +206,72 @@ function buildAttTable(tableEl, people, storeKey){
   tableEl.innerHTML = thead + tbody;
 }
 
-function renderAll(){
-  refreshSelects();
-  applyFormHints();
-  normInput.value = currentNorm();
-  normBadge.textContent = `${currentNorm()} ish kuni`;
-  buildAttTable(document.getElementById("attTableEmployees"), getEmployees(), "emp");
-  buildAttTable(document.getElementById("attTableForemen"), getForemen(), "fore");
+/* ---------- mobile view: pick one day, then tap each person to cycle their
+   status for that day. Replaces the wide day-grid, which is unusable on a
+   phone screen — a 30+ column table can't be made to fit no matter how much
+   the CSS is squeezed, so on mobile we switch the whole interaction model
+   instead. ---------- */
+const STATE_LABEL = {present:"Keldi", late:"Kechikdi", absent:"Kelmadi", "":"Belgilanmagan"};
+const STATE_CLASS = {present:"ok", late:"pending", absent:"danger", "":"neutral"};
+let selectedDay = new Date().getDate();
+
+function buildAttMobile(container, people, storeKey){
+  const ym = monthPicker.value;
+  const nDays = daysInMonth(ym);
+  if(selectedDay > nDays) selectedDay = nDays;
+  const norm = currentNorm();
+  const attendance = getAttendance();
+  const [y,m] = ym.split("-").map(Number);
+  const isCurrentMonth = ym === currentMonthKey();
+  const todayNum = new Date().getDate();
+
+  let chips = `<div class="day-chip-row" id="dayChipRow-${storeKey}">`;
+  for(let d=1; d<=nDays; d++){
+    const wd = new Date(y, m-1, d).getDay();
+    const isToday = isCurrentMonth && d===todayNum;
+    chips += `<button type="button" class="day-chip ${d===selectedDay?'active':''} ${isToday?'is-today':''}" data-day="${d}">
+      <span class="dc-num">${d}</span><span class="dc-wd">${DAY_NAMES[wd]}</span>
+    </button>`;
+  }
+  chips += `</div>`;
+
+  let cards = `<div class="att-mobile-list">`;
+  if(!people.length){
+    cards += `<div class="empty-note">Hali kiritilmagan</div>`;
+  }
+  people.forEach(p=>{
+    const key = `${storeKey}:${p.id}:${ym}`;
+    const rec = attendance[key] || {};
+    const dayRate = norm ? (Number(p.salary)||0) / norm : 0;
+    let workedDays = 0, fine = 0;
+    for(let d=1; d<=nDays; d++){
+      const state = rec[d] || "";
+      if(state==="present") workedDays += 1;
+      if(state==="late"){ workedDays += 1; fine += dayRate*0.5; }
+      if(state==="absent"){ fine += dayRate; }
+    }
+    const finalPay = Math.max((Number(p.salary)||0) - fine, 0);
+    const state = rec[selectedDay] || "";
+    cards += `<div class="att-mobile-card">
+      <div class="amc-top">
+        <span class="amc-name">${escapeHtml(p.name)}</span>
+        <button type="button" class="amc-status-btn badge ${STATE_CLASS[state]}" data-key="${key}" data-day="${selectedDay}">${STATE_LABEL[state]}</button>
+      </div>
+      <div class="amc-summary">Ishlagan: ${workedDays}/${norm} · Jarima: ${fmtSum(Math.round(fine))} so'm · Yakuniy: ${fmtSum(Math.round(finalPay))} so'm</div>
+    </div>`;
+  });
+  cards += `</div>`;
+
+  container.innerHTML = chips + cards;
+
+  const activeChip = container.querySelector(".day-chip.active");
+  if(activeChip) activeChip.scrollIntoView({inline:"center", block:"nearest"});
 }
 
-monthPicker.addEventListener("change", renderAll);
-normInput.addEventListener("change", ()=>{
-  const norms = getNorms();
-  norms[monthPicker.value] = Number(normInput.value)||26;
-  setNorms(norms);
-  renderAll();
-});
-
-document.addEventListener("click", e=>{
-  const cell = e.target.closest(".day-cell");
-  if(!cell) return;
-  const key = cell.dataset.key;
-  const day = cell.dataset.day;
+/* shared status-cycle logic used by both the desktop grid cells and the
+   mobile per-day cards, so behaviour (including the absence streak alert)
+   stays identical regardless of which view triggered it */
+function cycleStatus(key, day){
   const attendance = getAttendance();
   const rec = attendance[key] || {};
   const cur = rec[day] || "";
@@ -261,8 +307,48 @@ document.addEventListener("click", e=>{
       }
     }
   }
+}
 
+function renderAll(){
+  refreshSelects();
+  applyFormHints();
+  normInput.value = currentNorm();
+  normBadge.textContent = `${currentNorm()} ish kuni`;
+  buildAttTable(document.getElementById("attTableEmployees"), getEmployees(), "emp");
+  buildAttTable(document.getElementById("attTableForemen"), getForemen(), "fore");
+  buildAttMobile(document.getElementById("attMobileEmployees"), getEmployees(), "emp");
+  buildAttMobile(document.getElementById("attMobileForemen"), getForemen(), "fore");
+}
+
+monthPicker.addEventListener("change", renderAll);
+normInput.addEventListener("change", ()=>{
+  const norms = getNorms();
+  norms[monthPicker.value] = Number(normInput.value)||26;
+  setNorms(norms);
   renderAll();
+});
+
+document.addEventListener("click", e=>{
+  const cell = e.target.closest(".day-cell");
+  if(cell){
+    cycleStatus(cell.dataset.key, cell.dataset.day);
+    renderAll();
+    return;
+  }
+
+  const statusBtn = e.target.closest(".amc-status-btn");
+  if(statusBtn){
+    cycleStatus(statusBtn.dataset.key, statusBtn.dataset.day);
+    renderAll();
+    return;
+  }
+
+  const chip = e.target.closest(".day-chip");
+  if(chip){
+    selectedDay = Number(chip.dataset.day);
+    buildAttMobile(document.getElementById("attMobileEmployees"), getEmployees(), "emp");
+    buildAttMobile(document.getElementById("attMobileForemen"), getForemen(), "fore");
+  }
 });
 
 document.getElementById("formEmployee").addEventListener("submit", e=>{
